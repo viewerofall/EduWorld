@@ -1,0 +1,64 @@
+# Rust / Cargo
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Tauri
+src-tauri/target/
+src-tauri/WixTools/
+
+# Node
+node_modules/
+dist/
+.npm/
+npm-debug.log*
+
+# Compiled binaries (users build these themselves via build-binaries.sh)
+src-tauri/binaries/hello_asm
+src-tauri/binaries/hello_c
+src-tauri/binaries/hello_cpp
+src-tauri/binaries/hello_d
+src-tauri/binaries/hello_fortran
+src-tauri/binaries/hello_go
+src-tauri/binaries/hello_odin
+src-tauri/binaries/hello_rust
+src-tauri/binaries/hello_zig
+
+# Keep the source files and scripts
+!src-tauri/binaries/hello.asm
+!src-tauri/binaries/hello.c
+!src-tauri/binaries/hello.cpp
+!src-tauri/binaries/hello.d
+!src-tauri/binaries/hello.f90
+!src-tauri/binaries/hello.go
+!src-tauri/binaries/hello.rs
+!src-tauri/binaries/hello.zig
+!src-tauri/binaries/hello_odin_src/
+!src-tauri/binaries/hello.py
+!src-tauri/binaries/hello.rb
+!src-tauri/binaries/hello.lua
+!src-tauri/binaries/hello.pl
+!src-tauri/binaries/hello.js
+!src-tauri/binaries/hello.ts
+!src-tauri/binaries/hello.php
+!src-tauri/binaries/hello.sh
+!src-tauri/binaries/hello.r
+
+# Flatpak build artifacts
+build-dir/
+.flatpak-builder/
+flatpak/cargo-sources.json
+flatpak/node-sources.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.direnv/
+.envrc

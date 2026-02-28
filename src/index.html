@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduWorld</title>
+<style>
+:root {
+  --bg-void:#0a0a0b; --bg-base:#0f0f10; --bg-panel:#131316;
+  --bg-raised:#1a1a1e; --bg-highlight:#202028;
+  --border:#2a2a35; --border-bright:#3a3a48;
+  --phosphor:#c8f560; --amber:#ffb347; --cyan:#4ecdc4;
+  --red:#ff6b6b; --purple:#a78bfa; --blue:#60a5fa;
+  --text:#e2e8f0; --dim:#64748b; --muted:#374151;
+  --font:'JetBrains Mono','Cascadia Code','Fira Code',ui-monospace,monospace;
+  --r:4px; --hh:48px; --ch:44px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg-void);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.6;overflow:hidden;-webkit-font-smoothing:antialiased;}
+button{font-family:var(--font);}
+.scanlines{pointer-events:none;position:fixed;inset:0;z-index:9999;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);}
+
+/* ── Header ── */
+.app-header{height:var(--hh);background:var(--bg-base);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;}
+.header-left{display:flex;align-items:center;gap:10px;}
+.logo{color:var(--phosphor);font-size:18px;animation:pulse 3s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.app-name{font-weight:800;font-size:15px;letter-spacing:0.12em;color:var(--text);}
+.app-name span{color:var(--phosphor);}
+.app-tagline{font-size:10px;color:var(--dim);letter-spacing:0.06em;}
+.header-right{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background 0.3s;}
+.status-dot.running{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:blink 0.5s infinite;}
+.status-dot.done{background:var(--phosphor);box-shadow:0 0 8px var(--phosphor);}
+.status-dot.error{background:var(--red);box-shadow:0 0 8px var(--red);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+
+/* ── Category + Language Nav ── */
+.nav-wrapper{background:var(--bg-base);border-bottom:1px solid var(--border);flex-shrink:0;}
+.cat-bar{display:flex;padding:0 16px;gap:2px;border-bottom:1px solid var(--border);}
+.cat-btn{padding:6px 14px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-size:10px;letter-spacing:0.1em;cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+.cat-btn:hover{color:var(--text);}
+.cat-btn.active{color:var(--phosphor);border-bottom-color:var(--phosphor);}
+.lang-bar{display:flex;padding:4px 12px;gap:3px;overflow-x:auto;height:var(--ch);align-items:center;}
+.lang-btn{display:flex;align-items:center;gap:6px;padding:4px 12px;background:transparent;border:1px solid transparent;border-radius:var(--r);cursor:pointer;transition:all 0.15s;color:inherit;white-space:nowrap;height:32px;}
+.lang-btn:hover{background:var(--bg-raised);border-color:var(--border-bright);}
+.lang-btn.active{background:var(--bg-highlight);border-color:var(--phosphor);}
+.lang-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.lang-name{font-size:11px;font-weight:600;letter-spacing:0.08em;}
+.lang-ver{font-size:9px;color:var(--dim);}
+
+/* ── Main ── */
+.main-layout{display:flex;flex-direction:column;height:calc(100vh - var(--hh) - var(--ch) - 29px);}
+.splash{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:20px;animation:fadeIn 0.4s ease;}
+.splash-logo{font-size:72px;font-weight:800;letter-spacing:-0.04em;color:var(--muted);opacity:0.25;}
+.splash-logo span{color:var(--phosphor);opacity:1;}
+.splash-title{font-size:18px;font-weight:700;color:var(--dim);letter-spacing:0.1em;}
+.splash-sub{font-size:12px;color:var(--muted);max-width:460px;text-align:center;line-height:1.9;}
+.splash-count{font-size:11px;color:var(--phosphor);opacity:0.7;letter-spacing:0.08em;}
+.content-area{display:grid;grid-template-columns:1fr 1fr;gap:1px;flex:1;background:var(--border);animation:fadeIn 0.2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Panels ── */
+.panel{background:var(--bg-panel);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+.panel-header{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg-base);border-bottom:1px solid var(--border);flex-shrink:0;}
+.panel-title{font-weight:700;font-size:10px;letter-spacing:0.15em;color:var(--dim);}
+.panel-filename{font-size:10px;color:var(--amber);margin-left:auto;}
+.panel-body{flex:1;overflow:auto;min-height:0;}
+
+.run-btn{display:flex;align-items:center;gap:5px;padding:4px 12px;background:var(--phosphor);color:var(--bg-void);border:none;border-radius:var(--r);font-weight:700;font-size:10px;letter-spacing:0.1em;cursor:pointer;transition:all 0.15s;margin-left:6px;flex-shrink:0;}
+.run-btn:hover:not(:disabled){background:#d4f96a;box-shadow:0 0 14px rgba(200,245,96,0.4);}
+.run-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.run-req{font-size:9px;color:var(--amber);margin-left:6px;opacity:0.8;}
+
+.info-btn{width:20px;height:20px;background:var(--bg-raised);border:1px solid var(--border-bright);border-radius:50%;color:var(--dim);font-size:10px;cursor:pointer;margin-left:auto;transition:all 0.15s;flex-shrink:0;}
+.info-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* ── Code ── */
+.code-block{font-family:var(--font);font-size:11.5px;line-height:1.65;padding:14px;white-space:pre;overflow-x:auto;color:var(--text);min-height:100%;tab-size:4;}
+.code-block.annotated{color:var(--phosphor);}
+.code-block.hex{color:var(--amber);}
+.code-block.bits{color:var(--cyan);}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;background:var(--bg-base);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;}
+.tab{padding:7px 12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);font-size:9.5px;letter-spacing:0.1em;cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--phosphor);border-bottom-color:var(--phosphor);}
+.tab-content{flex:1;overflow:hidden;min-height:0;}
+.tab-panel{display:none;height:100%;overflow:auto;animation:fadeIn 0.15s ease;}
+.tab-panel.active{display:flex;flex-direction:column;}
+
+/* ── Terminal ── */
+.output-meta{display:flex;gap:14px;padding:6px 14px;background:var(--bg-base);border-bottom:1px solid var(--border);font-size:10px;flex-shrink:0;}
+#metaExitCode{color:var(--phosphor);}#metaDuration{color:var(--dim);}
+.req-notice{padding:14px 16px;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r);margin:14px;font-size:11.5px;color:var(--dim);line-height:1.8;}
+.req-notice strong{color:var(--amber);}
+.req-notice code{background:var(--bg-highlight);padding:1px 5px;border-radius:2px;color:var(--phosphor);font-size:10.5px;}
+.terminal{flex:1;padding:14px;font-size:12.5px;line-height:1.7;overflow:auto;}
+.terminal-prompt{color:var(--dim);margin-bottom:6px;}
+.terminal-prompt span{color:var(--phosphor);}
+.terminal-result{white-space:pre-wrap;}
+.terminal-hint{color:var(--muted);font-style:italic;}
+.terminal-result.success{color:var(--phosphor);text-shadow:0 0 10px rgba(200,245,96,0.3);animation:glow 0.5s ease;}
+.terminal-result.error-out{color:var(--red);}
+@keyframes glow{0%{text-shadow:0 0 20px rgba(200,245,96,0.8);}100%{text-shadow:0 0 10px rgba(200,245,96,0.3);}}
+
+/* ── Compile Steps ── */
+.compile-steps{padding:14px;display:flex;flex-direction:column;gap:12px;}
+.compile-step{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;animation:slideIn 0.2s ease both;}
+.compile-step:nth-child(1){animation-delay:.04s;}.compile-step:nth-child(2){animation-delay:.08s;}.compile-step:nth-child(3){animation-delay:.12s;}.compile-step:nth-child(4){animation-delay:.16s;}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:translateX(0);}}
+.step-header{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg-raised);border-bottom:1px solid var(--border);}
+.step-num{font-weight:800;font-size:9px;width:18px;height:18px;background:var(--phosphor);color:var(--bg-void);border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-cmd{font-size:11px;color:var(--amber);word-break:break-all;}
+.step-exp{padding:8px 10px;font-size:11.5px;color:var(--dim);line-height:1.7;}
+
+/* ── Deep Dive ── */
+.deep-content{padding:18px;font-size:12px;line-height:1.85;color:var(--dim);overflow:auto;height:100%;}
+.deep-content h3{font-weight:700;font-size:10px;letter-spacing:0.12em;color:var(--phosphor);margin:18px 0 7px;text-transform:uppercase;}
+.deep-content h3:first-child{margin-top:0;}
+.deep-content p{margin-bottom:10px;}
+.deep-content strong{color:var(--amber);font-weight:500;}
+.deep-content code{background:var(--bg-raised);border:1px solid var(--border);border-radius:2px;padding:1px 4px;color:var(--cyan);font-size:10.5px;}
+#langNameDisplay{font-weight:700;font-size:11px;letter-spacing:0.1em;color:var(--phosphor);}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;animation:fadeIn 0.2s ease;}
+.modal{background:var(--bg-panel);border:1px solid var(--border-bright);border-radius:var(--r);padding:24px;max-width:520px;width:90%;position:relative;box-shadow:0 24px 80px rgba(0,0,0,0.6);}
+.modal-close{position:absolute;top:12px;right:12px;width:24px;height:24px;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r);color:var(--dim);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.modal-close:hover{border-color:var(--red);color:var(--red);}
+.modal-title{font-weight:800;font-size:13px;letter-spacing:0.14em;color:var(--phosphor);margin-bottom:16px;}
+.modal-body{display:flex;flex-direction:column;gap:10px;}
+.modal-body p{font-size:12px;line-height:1.7;color:var(--dim);}
+.modal-body strong{color:var(--amber);font-weight:500;}
+.modal-body code{background:var(--bg-raised);padding:1px 4px;border-radius:2px;color:var(--cyan);font-size:10.5px;}
+
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg-base);}::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px;}::-webkit-scrollbar-thumb:hover{background:var(--dim);}
+@media(max-width:700px){.content-area{grid-template-columns:1fr;grid-template-rows:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="scanlines" aria-hidden="true"></div>
+
+<header class="app-header">
+  <div class="header-left">
+    <span class="logo">◈</span>
+    <span class="app-name">Edu<span>World</span></span>
+    <span class="app-tagline">// language deep dive</span>
+  </div>
+  <div class="header-right">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">SELECT A LANGUAGE</span>
+  </div>
+</header>
+
+<div class="nav-wrapper">
+  <div class="cat-bar" id="catBar"></div>
+  <div class="lang-bar" id="langBar"></div>
+</div>
+
+<div class="main-layout" id="mainLayout">
+  <div class="splash" id="splash">
+    <div class="splash-logo">Edu<span>World</span></div>
+    <div class="splash-title">LANGUAGE DEEP DIVE</div>
+    <div class="splash-sub">Pick any language above to explore its source code, compilation pipeline, disassembly, raw binary, how bits flow to electrons, and a full technical deep dive.</div>
+    <div class="splash-count" id="splashCount"></div>
+  </div>
+  <div class="content-area" id="contentArea" style="display:none">
+    <section class="panel">
+      <div class="panel-header">
+        <span class="panel-title">SOURCE</span>
+        <span class="panel-filename" id="sourceFilename">—</span>
+        <button class="run-btn" id="runBtn">▶ RUN</button>
+        <span class="run-req" id="runReq"></span>
+      </div>
+      <div class="panel-body"><pre class="code-block" id="sourceCode"></pre></div>
+    </section>
+    <section class="panel">
+      <div class="panel-header">
+        <span class="panel-title" id="langNameDisplay">—</span>
+        <button class="info-btn" id="infoBtn" title="What am I looking at?">?</button>
+      </div>
+      <div class="tab-bar" role="tablist">
+        <button class="tab active" data-tab="output">OUTPUT</button>
+        <button class="tab" data-tab="compile">COMPILE STEPS</button>
+        <button class="tab" data-tab="disasm">DISASSEMBLY</button>
+        <button class="tab" data-tab="hex">HEX / BINARY</button>
+        <button class="tab" data-tab="bits">0s &amp; 1s</button>
+        <button class="tab" data-tab="deep">DEEP DIVE</button>
+      </div>
+      <div class="tab-content">
+        <div class="tab-panel active" id="tab-output">
+          <div class="output-meta" id="outputMeta" style="display:none"><span id="metaExitCode"></span><span id="metaDuration"></span></div>
+          <div id="reqNotice"></div>
+          <div class="terminal" id="terminal">
+            <div class="terminal-prompt">$ <span id="termCmd">—</span></div>
+            <div class="terminal-result" id="termResult"><span class="terminal-hint">Press RUN to execute →</span></div>
+          </div>
+        </div>
+        <div class="tab-panel" id="tab-compile"><div class="compile-steps" id="compileSteps"></div></div>
+        <div class="tab-panel" id="tab-disasm"><pre class="code-block annotated" id="disasmContent"></pre></div>
+        <div class="tab-panel" id="tab-hex"><pre class="code-block hex" id="hexContent"></pre></div>
+        <div class="tab-panel" id="tab-bits"><pre class="code-block bits" id="bitsContent"></pre></div>
+        <div class="tab-panel" id="tab-deep"><div class="deep-content" id="deepContent"></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <h2 class="modal-title">WHAT AM I LOOKING AT?</h2>
+    <div class="modal-body">
+      <p><strong>OUTPUT</strong> — Actual stdout/stderr from running the program. Real execution.</p>
+      <p><strong>COMPILE STEPS</strong> — Every command and flag to go from source text to executable, explained in detail.</p>
+      <p><strong>DISASSEMBLY</strong> — Machine code the CPU actually executes, shown as human-readable mnemonics. What <code>objdump -d</code> shows.</p>
+      <p><strong>HEX / BINARY</strong> — Raw bytes on disk. What <code>xxd</code> produces. Includes ELF headers, section layout, string data.</p>
+      <p><strong>0s &amp; 1s</strong> — How each layer translates the program from source → IR → opcodes → voltage signals → physical electrons.</p>
+      <p><strong>DEEP DIVE</strong> — Language design decisions, runtime internals, history, performance characteristics, and what makes this language unique.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// LANGUAGE DATABASE — all content baked in, always available
+// RUN button uses Tauri invoke only for actual execution
+// ═══════════════════════════════════════════════════════
+
+const CATEGORIES = [
+  { id: 'all',        label: 'ALL LANGUAGES' },
+  { id: 'systems',    label: 'SYSTEMS' },
+  { id: 'scripting',  label: 'SCRIPTING' },
+  { id: 'popular',    label: 'POPULAR' },
+  { id: 'functional', label: 'FUNCTIONAL' },
+  { id: 'original',   label: 'ORIGINAL 5' },
+];
+
+// run: 'binary' | 'interpreter:<cmd>' | null
+// req: install note shown when run is null
+const LANGS = {
+  // ── ORIGINAL 5 ──────────────────────────────────────
+  asm: {
+    name:'x86-64 Assembly', file:'hello.asm', ver:'NASM', color:'#c8f560',
+    cat:['original','systems'],
+    run:'binary',
+    source:
+`; hello.asm — NASM x86-64 Linux
+; nasm -f elf64 hello.asm -o hello.o && ld hello.o -o hello_asm
+
+section .data
+    msg db "Hello, World!", 10   ; string + newline 0x0A
+    len equ $ - msg              ; compile-time length = 14
+
+section .text
+    global _start
+_start:
+    mov rax, 1       ; sys_write
+    mov rdi, 1       ; stdout fd
+    mov rsi, msg     ; buffer pointer
+    mov rdx, len     ; byte count
+    syscall
+
+    mov rax, 60      ; sys_exit
+    xor rdi, rdi     ; exit code 0
+    syscall`,
+    compile_steps:[
+      {step:1,cmd:'nasm -f elf64 hello.asm -o hello.o',exp:'NASM translates each mnemonic to its exact opcode bytes. Symbols like `msg` become placeholder relocations. The output is an ELF64 object file — code and data in the right sections, but addresses not yet assigned.'},
+      {step:2,cmd:'ld hello.o -o hello_asm',exp:'The linker assigns virtual addresses (code at 0x401000), resolves the `msg` symbol to its final address, and writes the ELF64 executable. No libc, no CRT — the binary is 100% self-contained at ~4 KB.'},
+    ],
+    disassembly:
+`0000000000401000 <_start>:
+  401000: b8 01 00 00 00    mov eax, 0x1        ; sys_write
+  401005: bf 01 00 00 00    mov edi, 0x1        ; stdout
+  40100a: 48 8d 35 ef 0f    lea rsi, [rip+0xfef]; &msg
+  401010: ba 0e 00 00 00    mov edx, 0xe        ; 14 bytes
+  401015: 0f 05             syscall
+  401017: b8 3c 00 00 00    mov eax, 0x3c       ; sys_exit
+  40101c: 31 ff             xor edi, edi        ; code 0
+  40101e: 0f 05             syscall
+Total machine code: 32 bytes. No PLT, no GOT, no stubs.`,
+    hex_view:
+`ELF magic: 7f 45 4c 46 02 01 01 00
+           DEL E  L  F  64 LE  v1 SysV
+
+.data — string on disk:
+48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 21 0a
+H  e  l  l  o  ,     W  o  r  l  d  !  \\n
+
+.text — machine code:
+b8 01 00 00 00   MOV EAX,1
+bf 01 00 00 00   MOV EDI,1
+48 8d 35 ...     LEA RSI,[msg]
+ba 0e 00 00 00   MOV EDX,14
+0f 05            SYSCALL
+b8 3c 00 00 00   MOV EAX,60
+31 ff            XOR EDI,EDI
+0f 05            SYSCALL`,
+    bits_explanation:
+`① 'H' = 0x48 = 0b01001000, '!' = 0x21, '\\n' = 0x0a
+   Bytes sit in .data at a fixed virtual address.
+
+② SYSCALL (0x0F 0x05) switches Ring 3→Ring 0.
+   LSTAR MSR holds the kernel entry point address.
+   Kernel reads RAX=1 → dispatches sys_write().
+
+③ sys_write → vfs_write → tty_write → framebuffer
+   Each '1' bit = ~3.3V on the memory bus
+   Each '0' bit = ~0.0V
+   At 5 GHz: one clock = 0.2 ns
+   SYSCALL latency: ~100–1000 cycles`,
+    deep_dive:
+`Assembly is the last human-readable layer before raw machine code. There is NO runtime, NO stdlib, NO main() — you own the CPU from byte zero.
+
+REGISTERS:
+RAX = syscall number / return value. RDI = arg1 (fd). RSI = arg2 (buffer). RDX = arg3 (count). Defined by the Linux x86-64 System V ABI.
+
+WHY XOR RDI,RDI NOT MOV RDI,0:
+xor encodes as 2 bytes vs 7 for mov-immediate. The CPU rename stage handles it without reading the old value — zero latency dependency.
+
+ELF FORMAT:
+ELF header → program headers (tell the kernel what to mmap) → .text (RX) → .data (RW). execve() reads the header, mmap()s segments, jumps to _start.
+
+WHAT C ADDS ON TOP:
+_start → __libc_start_main → argc/argv setup → atexit registration → locale init → main() → exit() → flush buffers → sys_exit_group. That is the CRT.`
+  },
+
+  c: {
+    name:'C', file:'hello.c', ver:'C99', color:'#60a5fa',
+    cat:['original','systems','popular'],
+    run:'binary',
+    source:
+`/* hello.c — C99
+   gcc -O2 -std=c99 hello.c -o hello_c */
+#include <stdio.h>
+
+int main(void) {
+    /* printf → buffered I/O → write() syscall
+       \\n flushes line-buffered stdout on terminals */
+    printf("Hello, World!\\n");
+    return 0;
+    /* exit() flushes buffers, runs atexit(), sys_exit_group(0) */
+}`,
+    compile_steps:[
+      {step:1,cmd:'gcc -O2 -std=c99 -E hello.c',exp:'Preprocessor: expands #include <stdio.h> — inserts ~800 lines of declarations. Strips comments. Expands macros. The output is pure C with no directives.'},
+      {step:2,cmd:'gcc -O2 -std=c99 -S hello.c -o hello.s',exp:'-O2 optimization detects printf("...\\n") with no format args and replaces it with puts() — simpler, avoids format string parsing at runtime. Outputs x86-64 assembly.'},
+      {step:3,cmd:'gcc -O2 -std=c99 hello.c -o hello_c',exp:'Full pipeline: preprocess → compile → assemble → link against libc.so.6 via PLT/GOT. Injects CRT startup: _start → __libc_start_main → main → exit.'},
+    ],
+    disassembly:
+`0000000000001149 <main>:
+   1149: 55                 push  rbp
+   114a: 48 89 e5           mov   rbp, rsp
+   ; GCC -O2: printf("...\\n") → puts("Hello, World!")
+   114d: 48 8d 05 b0 0e     lea   rax, [rip+0xeb0]  ; "Hello, World!"
+   1154: 48 89 c7           mov   rdi, rax
+   1157: e8 f4 fe ff ff     call  puts@plt
+   115c: 31 c0              xor   eax, eax   ; return 0
+   115e: 5d                 pop   rbp
+   115f: c3                 ret`,
+    hex_view:
+`.rodata (NUL-terminated C string):
+48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 21 00
+H  e  l  l  o  ,     W  o  r  l  d  !  \\0
+Note: C uses NUL-termination. Fortran uses length metadata.
+
+.dynamic:
+NEEDED: libc.so.6    ← dynamic link dependency
+Binary size ~16 KB vs 4 KB for raw ASM`,
+    bits_explanation:
+`① Lexer → AST → GIMPLE IR → SSA optimization
+② -O2 recognizes printf("...\\n") pattern → substitutes puts()
+③ PLT/GOT: first call resolves puts in libc, patches GOT.
+   Subsequent calls: one pointer dereference, then direct jump.
+④ puts() → flockfile() → _IO_write → write(1,buf,n) syscall
+   Same SYSCALL instruction as ASM, 10 layers deeper.`,
+    deep_dive:
+`C sits one layer above assembly. The compiler handles register allocation and instruction selection; you handle everything else.
+
+THE CRT:
+Before main(): _start → __libc_start_main sets up argc/argv, registers atexit handlers, calls .init_array constructors, then calls main(). After return 0: exit() flushes all FILE* buffers, runs atexit() chain, calls sys_exit_group.
+
+BUFFERED I/O:
+stdout is line-buffered when connected to a terminal (isatty() true), fully-buffered (4096 byte blocks) when redirected. The \\n triggers fflush() in line-buffered mode. Missing flushes before crash = lost output.
+
+UNDEFINED BEHAVIOR:
+Signed overflow, null deref, out-of-bounds, use-after-free are all UB. The compiler assumes UB never happens and optimizes aggressively — null checks after dereference get eliminated, overflow loops get unrolled infinitely. UB is the source of most C security vulnerabilities.
+
+PLT/GOT LAZY BINDING:
+Dynamic symbols are resolved on first call. The PLT stub jumps to ld.so, which finds the symbol in the shared library, patches the GOT, and redirects future calls to skip the resolver entirely.`
+  },
+
+  cpp: {
+    name:'C++', file:'hello.cpp', ver:'C++20', color:'#a78bfa',
+    cat:['original','systems','popular'],
+    run:'binary',
+    source:
+`// hello.cpp — C++20
+// g++ -O2 -std=c++20 hello.cpp -o hello_cpp
+#include <iostream>  // ~50,000 lines after preprocessing
+
+int main() {
+    // operator<< is a template resolved at compile time via ADL.
+    // std::endl = write '\\n' + flush() — more expensive than '\\n'.
+    std::cout << "Hello, World!" << std::endl;
+    return 0;
+    // ios_base::Init destructor flushes cout/cerr/clog
+}`,
+    compile_steps:[
+      {step:1,cmd:'g++ -O2 -std=c++20 -E hello.cpp | wc -l',exp:'Preprocessing #include <iostream> expands to ~50,000 lines: the entire iostream template hierarchy, type_traits, locale machinery, allocators. This is why C++ compiles slowly. C++20 Modules solve this by precompiling headers.'},
+      {step:2,cmd:'g++ -O2 -std=c++20 -S hello.cpp',exp:'Templates are instantiated for basic_ostream<char, char_traits<char>>. Name mangling encodes the full type signature into every symbol (c++filt to decode). std::endl compiles to put(\'\\n\') + flush() — two separate calls.'},
+      {step:3,cmd:'g++ -O2 -std=c++20 hello.cpp -o hello_cpp',exp:'Links libstdc++ and libc. Binary includes vtables for the ostream hierarchy, locale objects, and a static ios_base::Init that initializes cout before main() via .init_array.'},
+    ],
+    disassembly:
+`0000000000001169 <main>:
+   ; std::cout << "Hello, World!"
+   1169: 48 8d 35 ...       lea  rsi, "Hello, World!"
+   1170: 48 8b 3d ...       mov  rdi, [&std::cout]
+   1177: e8 ...             call _ZNSo9_M_insertIPKcEERSoT_@plt
+   ;     ^^^^ demangled: std::ostream::_M_insert<char const*>()
+   ; std::endl → put('\\n') + flush()
+   117c: 48 8b 3d ...       mov  rdi, [&std::cout]
+   1183: e8 ...             call _ZNSo3putEc@plt    ; ostream::put()
+   1188: e8 ...             call _ZNSo5flushEv@plt  ; ostream::flush()`,
+    hex_view:
+`Name mangling key:
+_Z = C++ symbol
+N  = nested name
+So = std::basic_ostream<char>
+9_M_insert = method (9 chars)
+IPKcE = template<const char*>
+
+Why mangling: the linker needs unique names for overloaded
+functions and template instantiations. c++filt decodes them.
+extern "C" {} suppresses mangling for C interop.`,
+    bits_explanation:
+`① operator<< is a template instantiated at compile time.
+   Zero runtime overhead for the type dispatch itself.
+② Virtual dispatch for streambuf: vptr → vtable → fn ptr.
+   One indirection per overflow/xsputn call.
+③ std::endl = put('\\n') + flush().
+   flush() forces write() syscall immediately.
+   '\\n' alone waits for the 4096-byte buffer to fill.
+④ ios_base::Init ctor runs via .init_array before main().
+   Initializes cout, cin, cerr, clog and ties cin to cout.`,
+    deep_dive:
+`C++ adds abstraction machinery on top of C. A single cout line triggers template instantiation, virtual dispatch, locale machinery, and static initialization.
+
+IOSTREAM HIERARCHY:
+basic_ios → basic_ostream → std::ostream (typedef for basic_ostream<char>). cout is a global instance connected to fd 1 via basic_filebuf. Each << returns ostream& enabling chaining.
+
+VTABLE COST:
+streambuf has virtual overflow() and xsputn(). Each call through a virtual function: load vptr from object → index vtable → call through pointer. One extra indirection vs a direct call.
+
+WHY endl IS SLOW:
+endl = put('\\n') + flush(). flush() is an immediate write() syscall regardless of buffer state. In tight output loops, replacing endl with '\\n' can give 5–10x throughput. Add ios::sync_with_stdio(false) and cin.tie(nullptr) for further gain.
+
+ZERO-COST ABSTRACTIONS:
+Templates, constexpr, and inlining genuinely produce zero overhead vs hand-written C. iostream does not fully satisfy zero-cost — locale, sync_with_stdio, and thread safety add overhead even when unused. This is a known design regret in the standard.`
+  },
+
+  zig: {
+    name:'Zig', file:'hello.zig', ver:'0.13+', color:'#f7a41d',
+    cat:['original','systems'],
+    run:'binary',
+    source:
+`// hello.zig — Zig 0.13+
+// zig build-exe hello.zig -O ReleaseSafe
+const std = @import("std");
+
+pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
+    // Format string verified at compile time.
+    // Wrong type for a format spec = compile error, not crash.
+    try stdout.print("Hello, World!\\n", .{});
+}`,
+    compile_steps:[
+      {step:1,cmd:'zig build-exe hello.zig -O Debug',exp:'Full safety checks (overflow, bounds, null). Comptime evaluates the format string — type errors are compile errors. LLVM backend generates unoptimized code with extensive safety instrumentation.'},
+      {step:2,cmd:'zig build-exe hello.zig -O ReleaseSafe',exp:'Safety checks kept, optimizations enabled. Zig bundles musl-derived libc — the binary is fully static, no system libc dependency. Run on any Linux x86-64 without version concerns.'},
+      {step:3,cmd:'zig build-exe hello.zig -O ReleaseSmall -fstrip',exp:'Optimize for size, strip debug info. Cross-compilation built-in: add -Dtarget=aarch64-linux-musl for ARM64 output from x86 host with no extra toolchain needed.'},
+    ],
+    disassembly:
+`; ReleaseSafe — direct write() syscall, no libc wrapper
+0000000000201f60 <main>:
+  lea  rsi, [rip+...]   ; "Hello, World!\\n"
+  mov  edx, 14
+  mov  edi, 1           ; stdout fd
+  mov  eax, 1           ; sys_write
+  syscall
+  ; ReleaseSafe adds error check:
+  test rax, rax
+  js   .Lerror_handler  ; negative return = error
+  xor  edi, edi
+  mov  eax, 60          ; sys_exit
+  syscall`,
+    hex_view:
+`No .interp → no dynamic linker path → fully static.
+No .dynamic → no NEEDED entries → zero shared lib deps.
+ldd hello_zig: "not a dynamic executable"
+
+Binary sizes (stripped, ReleaseSafe):
+hello_asm:    4 KB  — opcodes + ELF headers only
+hello_c:     16 KB  — CRT + PLT + libc refs
+hello_cpp:  100 KB  — iostream vtables + libstdc++
+hello_zig:  900 KB  — Zig runtime + bundled musl libc`,
+    bits_explanation:
+`① Format string verified at comptime — zero runtime parsing.
+   print("{d}", .{"oops"}) = compile error.
+   C's printf scans % at runtime on every call.
+② !void is a tagged union: {code:u16, value:void}.
+   try = if (code != 0) return code — two instructions.
+   No setjmp, no stack unwinding tables in the binary.
+③ Comptime duck typing: GenericWriter accepts any type
+   with a write([]u8) method — evaluated at compile time,
+   no vtable, no runtime type info.`,
+    deep_dive:
+`Zig is designed to replace C. Key innovations: comptime, explicit errors, no hidden control flow.
+
+COMPTIME:
+Runs arbitrary Zig code at compile time. Replaces macros, templates, and code generators. ArrayList(u32) creates a type at comptime. Format strings are verified at comptime. @TypeOf, @typeInfo, @field all work at comptime.
+
+ERROR HANDLING:
+!T = "T or error". try propagates. catch handles inline. Error sets are inferred. This is explicit (visible in signatures), zero-overhead (compare + branch), and composable. No exceptions, no errno, no panic-by-default.
+
+NO HIDDEN CONTROL FLOW:
+No exceptions (no unwind tables), no operator overloading (no surprise calls), no implicit conversions (no silent truncation), no constructors/destructors. defer runs at scope exit — deterministic cleanup.
+
+MEMORY:
+No default allocator. Every allocating function takes std.mem.Allocator. The test allocator detects leaks. Arena allocator frees everything at once. Page allocator goes straight to the OS.`
+  },
+
+  fortran: {
+    name:'Fortran', file:'hello.f90', ver:'F90/2018', color:'#ff6b6b',
+    cat:['original','systems'],
+    run:'binary',
+    source:
+`! hello.f90 — Fortran 90/2018
+! gfortran -O2 hello.f90 -o hello_fortran
+!
+! First high-level language (IBM, 1957).
+! Still dominates HPC and climate modeling.
+program hello
+    implicit none
+    ! IMPLICIT NONE required — without it, I-N vars are INTEGER by default
+    write(*,*) 'Hello, World!'
+    stop
+end program hello`,
+    compile_steps:[
+      {step:1,cmd:'gfortran -O2 -S hello.f90 -o hello.s',exp:'Parses Fortran 90 free-form source, resolves implicit typing, generates x86-64 assembly. write(*,*) compiles to calls into libgfortran\'s I/O runtime — a full unit-based I/O subsystem.'},
+      {step:2,cmd:'gfortran -O2 hello.f90 -o hello_fortran',exp:'Links libgfortran.so (Fortran runtime) and libc. Runtime provides: I/O unit table, array descriptor handling (bounds/stride/rank metadata), formatted I/O formatters, STOP handler.'},
+    ],
+    disassembly:
+`; Entry point is MAIN__ (double underscore)
+; Real main() is in libgfortran CRT, calls MAIN__
+<MAIN__>:
+  ; write(*,*) 'Hello, World!' = 3 libgfortran calls:
+  call _gfortran_st_write            ; begin transaction
+  lea  rdi, [msg]
+  mov  esi, 13                       ; length (no NUL)
+  call _gfortran_transfer_character_write
+  call _gfortran_st_write_done       ; flush + newline
+  xor  edi, edi
+  call _gfortran_stop_numeric        ; stop`,
+    hex_view:
+`I/O unit table:
+  Unit 5  = stdin   (READ *,)
+  Unit 6  = stdout  (WRITE *,)
+  Unit *  = default = unit 6
+
+String storage — NO NUL terminator:
+  C:       "Hello" → 48 65 6c 6c 6f 00  (NUL-terminated)
+  Fortran: 'Hello' → 48 65 6c 6c 6f     (length tracked separately)
+  CHARACTER(20) :: s = 'Hi' → space-padded to 20 chars`,
+    bits_explanation:
+`① Column-major arrays — CRITICAL for HPC cache performance.
+   C:       A[row][col] — rows contiguous in memory
+   Fortran: A(row,col) — columns contiguous
+   BLAS/LAPACK assume Fortran ordering since 1979.
+② IMPLICIT NONE prevents I-N auto-INTEGER typing.
+   N=3.14 without it → N=3 silently (truncation bug).
+③ No aliasing between dummy array arguments by default.
+   Compiler keeps values in registers across loop iterations.
+   Enables AVX-512 auto-vectorization C can\'t match without restrict.`,
+    deep_dive:
+`Fortran (FORmula TRANslation) was designed at IBM by John Backus in 1957. Goal: code as fast as hand-written assembly. They largely succeeded.
+
+WHY IT\'S STILL USED:
+Array semantics: A = B + C adds entire arrays. A(1:N:2) = 0 zeros every other element. matmul(A,B) is a built-in the compiler maps to BLAS. Aliasing guarantees let the compiler keep array values in SIMD registers across loops. Coarrays (Fortran 2008): REAL::x[*] is a built-in distributed array across parallel images.
+
+HISTORICAL QUIRKS:
+Fixed-form (Fortran 77): columns 1-5 labels, 6 continuation, 7-72 code, 73-80 ignored (punch card sequence numbers). COMMON blocks: global shared memory predating modules. EQUIVALENCE: two variables share the same address (type punning from the 1950s). Arithmetic IF: IF(expr) L1,L2,L3.
+
+Modern Fortran (2018) adds OOP, C interop, coarrays, submodules — fully backward compatible with 1957 Fortran.`
+  },
+
+  // ── SYSTEMS ─────────────────────────────────────────
+  rust: {
+    name:'Rust', file:'hello.rs', ver:'2021', color:'#f97316',
+    cat:['systems','popular'],
+    run:'binary',
+    source:
+`// hello.rs — Rust 2021 edition
+// rustc -O hello.rs -o hello_rust
+// or: cargo new hello && cargo run
+fn main() {
+    // println! is a macro — expands at compile time.
+    // It calls std::io::stdout().lock() internally,
+    // formats the string, and calls write_all().
+    println!("Hello, World!");
+}`,
+    compile_steps:[
+      {step:1,cmd:'rustc -O hello.rs -o hello_rust',exp:'rustc (MIR → LLVM IR → native code). The macro println! expands to a format_args! call which builds a fmt::Arguments struct at compile time. The actual I/O goes through BufWriter<Stdout> with a 4096-byte buffer.'},
+      {step:2,cmd:'rustc -O --edition 2021 hello.rs -o hello_rust',exp:'The borrow checker runs at compile time — verifying ownership, lifetimes, and alias rules. Zero runtime overhead for memory safety. No GC pauses, no ref-counting on the happy path.'},
+    ],
+    disassembly:
+`<main>:
+  ; println! expands to ~10 instructions:
+  ; Acquire stdout lock, write "Hello, World!\\n", release
+  lea  rsi, [rip+...]   ; "Hello, World!\\n"
+  mov  edx, 14
+  ; std::io::Write::write_all → write() syscall
+  mov  edi, 1
+  mov  eax, 1
+  syscall
+  ; Lock/unlock: mutex in std::io::Stdout
+  ; In release build often optimized to direct write`,
+    hex_view:
+`Rust binary characteristics:
+- Statically linked by default with musl or glibc
+- No GC metadata in binary
+- Panic handler embedded (configurable: abort vs unwind)
+- fmt machinery in .rodata for format strings
+- Monomorphized generics: each type gets its own code copy`,
+    bits_explanation:
+`① println! macro expands at compile time → zero runtime macro parsing.
+② Ownership system enforced at compile time → zero runtime checks.
+③ Stdout is protected by a Mutex<RawFd>.
+   In release builds, lock/unlock compiles to ~4 instructions.
+④ No GC: drop() is called deterministically at scope end,
+   compiling to free() or OS dealloc — no safepoint pauses.`,
+    deep_dive:
+`Rust guarantees memory safety without a garbage collector, using ownership and borrowing checked at compile time.
+
+OWNERSHIP:
+Every value has exactly one owner. When the owner goes out of scope, the value is dropped (destructor runs, memory freed). No dangling pointers, no double-free, no use-after-free — proven at compile time.
+
+BORROWING:
+References let you use a value without owning it. You can have either: any number of immutable references (&T), OR exactly one mutable reference (&mut T). Never both simultaneously. This eliminates data races at compile time.
+
+ZERO-COST ABSTRACTIONS:
+Iterators, closures, and trait objects compile down to the same code as hand-written loops. No virtual dispatch unless you opt into it with dyn Trait. Monomorphization: each generic instantiation gets its own optimized code.
+
+PRINTLN MACRO:
+println! is hygienic — it captures variables by reference at the call site, builds a fmt::Arguments at compile time describing the format, and calls std::io::_print() which acquires the stdout lock and flushes. The format string parsing is zero-cost at runtime.`
+  },
+
+  go: {
+    name:'Go', file:'hello.go', ver:'1.21+', color:'#00acd7',
+    cat:['systems','popular'],
+    run:'binary',
+    source:
+`// hello.go — Go 1.21+
+// go build -o hello_go hello.go
+package main
+
+import "fmt"
+
+func main() {
+    // fmt.Println uses reflection to format arguments.
+    // It writes to os.Stdout via a bufio.Writer.
+    // Adds a newline automatically.
+    fmt.Println("Hello, World!")
+}`,
+    compile_steps:[
+      {step:1,cmd:'go build -o hello_go hello.go',exp:'go build compiles and links in one step. The Go toolchain (gc compiler) parses the AST, performs type checking and escape analysis, generates SSA IR, applies optimization passes, and emits native code. The output is a statically linked binary with the Go runtime embedded.'},
+      {step:2,cmd:'go build -ldflags="-s -w" -o hello_go hello.go',exp:'-s strips the symbol table. -w strips DWARF debug info. Reduces binary size significantly. The Go runtime (scheduler, GC, goroutine stacks) is always included — the minimum binary size is ~1-2 MB even for trivial programs.'},
+    ],
+    disassembly:
+`<main.main>:
+  ; fmt.Println uses reflection internally
+  ; Go calling convention: args on stack (not registers pre-1.17)
+  ; Go 1.17+ uses register-based calling convention
+  CALL runtime.convT64(SB)     ; boxing for interface
+  LEAQ go:string."Hello..."    ; string header
+  CALL fmt.Fprintln(SB)        ; → os.Stdout writer
+  RET`,
+    hex_view:
+`Go binary always includes the runtime:
+- Goroutine scheduler (M:N threading)
+- Garbage collector (tri-color mark-and-sweep)
+- Stack grower (goroutine stacks start at 8KB, grow on demand)
+- Defer/panic/recover machinery
+Minimum binary: ~1.8 MB (hello world)
+fmt package adds reflection machinery: +500 KB`,
+    bits_explanation:
+`① fmt.Println uses reflect to format each argument.
+   The interface{} parameter boxes the string at runtime.
+② Go runtime GC: tri-color mark-and-sweep with write barriers.
+   Write barrier = extra instruction on every pointer store.
+③ Goroutine stacks: virtual, start at 8KB, grow via stack copying.
+   Stack check on function entry: 2 instructions.
+④ defer: pushed to a defer chain on the goroutine stack,
+   executed on function exit — ~60ns overhead per defer.`,
+    deep_dive:
+`Go prioritizes simplicity and fast compilation over raw performance. It includes a runtime with goroutines, garbage collection, and a standard library that covers most needs.
+
+GOROUTINES:
+Goroutines are M:N green threads scheduled by Go's runtime. They start with 8KB stacks that grow automatically. The scheduler multiplexes goroutines onto OS threads, handling blocking syscalls by parking the thread and running other goroutines. This enables hundreds of thousands of concurrent goroutines.
+
+GARBAGE COLLECTOR:
+Tri-color mark-and-sweep with concurrent marking. Write barriers on pointer stores maintain invariants during concurrent GC. Stop-the-world pauses are typically sub-millisecond. The GC trades some throughput for low latency.
+
+FMT PACKAGE:
+fmt.Println uses reflection (reflect package) to inspect argument types at runtime. This is flexible but adds overhead vs a format string verified at compile time (like Zig or Rust). For performance-critical output, use os.Stdout.WriteString directly.
+
+INTERFACES:
+Interface values are fat pointers: (type pointer, data pointer). Calling an interface method: load the type pointer → look up the method in the itab → call through the function pointer. Similar to C++ virtual dispatch but with runtime type information.`
+  },
+
+  d: {
+    name:'D', file:'hello.d', ver:'D2', color:'#b5202e',
+    cat:['systems'],
+    run:'binary',
+    source:
+`// hello.d — D language (D2)
+// ldc2 -O2 -of=hello_d hello.d
+// or: dmd -of=hello_d hello.d
+import std.stdio;
+
+void main() {
+    // writeln is part of Phobos standard library.
+    // Like C++ iostream but with D's uniform function call syntax.
+    // D also supports printf-style: writefln("Hello, %s!", "World")
+    writeln("Hello, World!");
+}`,
+    compile_steps:[
+      {step:1,cmd:'dmd -of=hello_d hello.d',exp:'DMD (reference compiler) parses D source, performs semantic analysis including template instantiation and CTFE (compile-time function execution), generates object code. Fast compilation is a design goal.'},
+      {step:2,cmd:'ldc2 -O2 -of=hello_d hello.d',exp:'LDC uses LLVM backend for better optimization. D templates are far more powerful than C++ — they are Turing-complete at compile time. CTFE can run arbitrary D code at compile time, similar to Zig\'s comptime.'},
+    ],
+    disassembly:
+`<_Dmain>:
+  ; D main is _Dmain, called by the D runtime entry point
+  ; writeln → std.stdio internals → File.write → write() syscall
+  ; D uses the same calling convention as C on the platform
+  lea  rdi, [string_data]
+  call _D3std5stdio7writelnFAyaZv@PLT
+  xor  eax, eax
+  ret`,
+    hex_view:
+`D runtime components:
+- Garbage collector (conservative GC, optional)
+- TypeInfo for runtime type information
+- Exception handling machinery (similar to C++)
+- Module constructors/destructors (.init_array)
+- Contract checking infrastructure (DbC)`,
+    bits_explanation:
+`① D has both GC-managed memory and manual memory (malloc/free/scope).
+   @nogc attribute enforces no GC allocation in a function.
+② writeln uses D\'s UFCS: "Hello".writeln() also works.
+③ D templates use CTFE (compile-time function execution) —
+   run arbitrary D code during compilation.
+④ -betterC mode: disable GC and runtime, get bare-metal output
+   compatible with C ABI, similar to Zig\'s freestanding.`,
+    deep_dive:
+`D is a systems language that aims to fix C++ design mistakes while keeping C-level performance.
+
+CTFE (COMPILE-TIME FUNCTION EXECUTION):
+Any function marked pure can be executed at compile time. This is more powerful than C++ constexpr — entire algorithms can run at compile time to generate lookup tables, parse formats, or validate data.
+
+DESIGN BY CONTRACT:
+D has built-in preconditions (in blocks), postconditions (out blocks), and invariants (invariant blocks). These compile to assertions in debug mode and disappear in release mode — zero release overhead.
+
+TEMPLATES:
+D templates are Turing-complete at compile time, more powerful than C++. Template constraints (static if, is()) allow precise specialization without SFINAE gymnastics. Mixins let you inject generated source code directly.
+
+MEMORY MODEL:
+D supports three memory models: GC-managed (default), manual (@nogc with malloc/free), and reference-counted (std.typecons.RefCounted). -betterC disables the GC and runtime entirely, producing C-compatible output.`
+  },
+
+  odin: {
+    name:'Odin', file:'hello.odin', ver:'dev', color:'#3b9ddd',
+    cat:['systems'],
+    run:'binary',
+    source:
+`// hello.odin — Odin language
+// odin build . -file -out:hello_odin
+package main
+import "core:fmt"
+
+main :: proc() {
+    // proc = procedure (Odin's function keyword)
+    // fmt.println uses the core library formatter
+    // Odin has no hidden allocations in procedures by default
+    fmt.println("Hello, World!")
+}`,
+    compile_steps:[
+      {step:1,cmd:'odin build hello.odin -file -out:hello_odin',exp:'Odin compiles directly to native code via LLVM. The -file flag treats a single file as the entire package. No GC by default — memory is manually managed or allocated through explicit allocator contexts passed down the call stack.'},
+      {step:2,cmd:'odin build hello.odin -file -out:hello_odin -opt:2',exp:'-opt:2 enables LLVM O2 optimization. Odin\'s context system threads an implicit Context parameter through every procedure, carrying the current allocator, logger, and assertion handler. Zero overhead when unused.'},
+    ],
+    disassembly:
+`<main>:
+  ; fmt.println → core:fmt internal → os.write()
+  ; Odin uses standard C calling convention
+  lea  rdi, [string_literal]
+  mov  esi, 14                ; length
+  call fmt.println_string
+  xor  eax, eax
+  ret`,
+    hex_view:
+`Odin binary characteristics:
+- No GC runtime by default (no GC pauses)
+- Context system: implicit allocator passed to all procedures
+- No implicit heap allocation in core library procedures
+- Optional bounds checking (-bounds-check flag)
+- LLVM-optimized native code`,
+    bits_explanation:
+`① No hidden allocations: fmt.println does not heap allocate
+   unless the format string requires it.
+② Context system: every proc receives an implicit Context
+   containing the current allocator, temp_allocator, logger.
+   Switching allocators: context.allocator = arena_allocator.
+③ Odin strings are (ptr, len) slices — not NUL-terminated.
+   No buffer overruns from missing NUL bytes.`,
+    deep_dive:
+`Odin is a modern systems language focused on simplicity, readability, and explicit control. Designed by Ginger Bill as a reaction to C++ complexity.
+
+CONTEXT SYSTEM:
+Every procedure implicitly receives a Context value (allocator, temp_allocator, logger, assertion handler). Changing the allocator for a scope: push a new context. All allocations in that scope use the new allocator. This makes allocation strategies explicit and composable without global state.
+
+NO HIDDEN CONTROL FLOW:
+Odin has no operator overloading, no implicit conversions, no constructors or destructors. defer handles cleanup. Procedures are first-class but have no closure allocation unless explicitly using proc() with a capture list.
+
+MULTIPLE RETURN VALUES:
+Native multiple return: proc() -> (int, bool). Used for error handling: file, ok := os.open("path"). No Result type needed. No exception unwinding.
+
+SOA DATA LAYOUT:
+Odin has built-in #soa struct tag to automatically transform an array of structs into a struct of arrays for SIMD-friendly memory layout — a performance optimization that typically requires manual work in C.`
+  },
+
+  // ── SCRIPTING ────────────────────────────────────────
+  python: {
+    name:'Python', file:'hello.py', ver:'3.x', color:'#3776ab',
+    cat:['scripting','popular'],
+    run:'interpreter:python3',
+    source:
+`# hello.py — Python 3
+# python3 hello.py
+
+# print() calls sys.stdout.write() internally.
+# The file object uses a C-level FileIO buffer.
+# Python bytecode is compiled to .pyc on first import.
+print("Hello, World!")`,
+    compile_steps:[
+      {step:1,cmd:'python3 -m py_compile hello.py → hello.pyc',exp:'Python compiles source to bytecode (.pyc) and caches in __pycache__/. Bytecode is platform-independent — runs on any Python 3.x interpreter. The compile step is usually invisible but always happens.'},
+      {step:2,cmd:'python3 -c "import dis; import hello"',exp:'dis module shows bytecode: LOAD_NAME \'print\', LOAD_CONST \'Hello, World!\', CALL_FUNCTION 1, POP_TOP. The CPython VM executes these as a switch/case loop over the bytecode array.'},
+    ],
+    disassembly:
+`Python bytecode (dis.dis output):
+  1  LOAD_NAME   0 (print)
+     LOAD_CONST  0 ('Hello, World!')
+     CALL_FUNCTION 1
+     POP_TOP
+     LOAD_CONST  1 (None)
+     RETURN_VALUE
+
+CPython executes this in ceval.c:
+  while(1) { switch(opcode) { case CALL_FUNCTION: ... } }
+Each bytecode op takes ~50-100 ns at 1 GHz effective IPC`,
+    hex_view:
+`.pyc file structure:
+magic: 0d 0d 0a (Python 3.x version tag)
+flags, timestamp, source size
+marshal-encoded code object:
+  co_consts: ('Hello, World!', None)
+  co_names:  ('print',)
+  co_code:   bytes of bytecode instructions
+  co_filename, co_firstlineno, co_name`,
+    bits_explanation:
+`① Python is interpreted: CPython reads bytecode ops one by one.
+   Each op: load from value stack, execute C code, push result.
+② GIL (Global Interpreter Lock): only one thread runs Python
+   bytecode at a time. I/O releases the GIL.
+③ print("text") path:
+   bytecode CALL → C function builtin_print → PyFile_WriteObject
+   → PyObject_Str → _io_TextIOWrapper_write
+   → BufferedWriter → FileIO.write → write() syscall
+④ Reference counting: every object has ob_refcnt.
+   Increment on bind, decrement on unbind, free when 0.`,
+    deep_dive:
+`Python prioritizes developer productivity over performance. CPython is the reference implementation; PyPy JIT-compiles Python to native code.
+
+CPYTHON EXECUTION:
+Source → AST → bytecode (.pyc). The eval loop in ceval.c is a giant switch/case. Python 3.11+ added specializing adaptive interpreter (PEP 659): hot bytecode ops are replaced with faster specialized versions inline.
+
+THE GIL:
+CPython's Global Interpreter Lock ensures thread safety for reference counting without atomic operations on every field access. Only one thread runs Python bytecode at a time. Removed experimentally in Python 3.13 (free-threaded build, PEP 703).
+
+DYNAMIC TYPING:
+Every Python value is a PyObject* — a heap-allocated struct with a type pointer and a reference count. Attribute access is a dictionary lookup. This flexibility costs: each operation involves multiple pointer dereferences and dict lookups vs a single instruction in C.
+
+PERFORMANCE:
+CPython is typically 10-100x slower than C for CPU-bound work. Solutions: NumPy (C extension for arrays), Cython (transpile to C), ctypes (call C directly), PyPy JIT (3-10x faster), or Python 3.13 free-threaded + Nogil.`
+  },
+
+  ruby: {
+    name:'Ruby', file:'hello.rb', ver:'3.x', color:'#cc342d',
+    cat:['scripting','popular'],
+    run:'interpreter:ruby',
+    source:
+`# hello.rb — Ruby 3.x
+# ruby hello.rb
+
+# puts calls to_s on the argument and writes to $stdout.
+# Ruby's IO class uses buffered write internally.
+# Everything in Ruby is an object, including strings and nil.
+puts "Hello, World!"`,
+    compile_steps:[
+      {step:1,cmd:'ruby --dump=insns hello.rb',exp:'Ruby compiles to YARV (Yet Another Ruby VM) bytecode instructions. --dump=insns shows them. Ruby 3.x added YJIT (Yet Another JIT), an in-process JIT that compiles hot YARV bytecode to native x86-64 machine code on first execution.'},
+      {step:2,cmd:'ruby --yjit hello.rb',exp:'YJIT (written in Rust) compiles frequently-executed Ruby methods to native code. It uses lazy compilation — code is compiled on first call. For hello world, YJIT overhead exceeds benefit, but for long-running apps it delivers 20-40% speedup.'},
+    ],
+    disassembly:
+`YARV bytecode (--dump=insns):
+  putself               ; push main object
+  putstring "Hello, World!"
+  opt_send_without_block puts  ; call puts
+  leave
+
+YJIT compiles hot methods to x86-64:
+  mov rdi, [string_obj]
+  call rb_io_puts        ; C extension function
+  ret`,
+    hex_view:
+`Ruby object layout (RValue):
+  flags:  u64  (type tag, GC bits, frozen flag)
+  klass:  ptr  → class object
+  data:   union of type-specific fields
+String: { ptr: *u8, len: usize, capacity: usize, encoding: ID }
+Everything on the heap — no stack-allocated Ruby objects.`,
+    bits_explanation:
+`① Every Ruby value is a VALUE (tagged pointer or immediate).
+   Small integers: Fixnum = (n << 1) | 1 — no heap allocation.
+   Strings, arrays, hashes: heap-allocated RValue structs.
+② puts = putself + opt_send → rb_io_write → write() syscall.
+③ GC: tri-color incremental mark-and-sweep (Ruby 2.2+).
+   Generational: most objects die young, promoted to old gen.
+④ GVL (Global VM Lock): like Python's GIL — one thread runs
+   Ruby code at a time. Ractors (Ruby 3.0) allow true parallelism.`,
+    deep_dive:
+`Ruby prioritizes expressiveness and programmer happiness. "Principle of Least Surprise" — the language should behave as the programmer expects.
+
+EVERYTHING IS AN OBJECT:
+1.class → Integer. nil.is_a?(NilClass) → true. Methods can be called on any value. Even basic arithmetic is method dispatch: 1 + 2 is 1.+(2) under the hood (optimized in YARV).
+
+BLOCKS, PROCS, LAMBDAS:
+Ruby's block syntax (do...end or {}) is unique. Methods yield to blocks. Proc and lambda are first-class closures. This enables DSLs that read like natural language: 3.times { puts "hi" }.
+
+METAPROGRAMMING:
+define_method, method_missing, class_eval, instance_variable_set. Ruby code can modify classes at runtime, add methods to existing objects, and intercept undefined method calls. Rails uses this extensively for ActiveRecord.
+
+YJIT:
+Ruby 3.1+ includes YJIT, written in Rust, as the default JIT. It compiles Ruby methods to native code lazily on first call, using type feedback to generate specialized code paths. ~20-40% speedup on real-world Rails apps.`
+  },
+
+  lua: {
+    name:'Lua', file:'hello.lua', ver:'5.4', color:'#00007c',
+    cat:['scripting','popular'],
+    run:'interpreter:lua',
+    source:
+`-- hello.lua — Lua 5.4
+-- lua hello.lua
+
+-- print() calls tostring() on each argument,
+-- writes to stdout separated by tabs, adds newline.
+-- Lua is one of the fastest scripting languages:
+-- LuaJIT traces hot code paths and compiles to native.
+print("Hello, World!")`,
+    compile_steps:[
+      {step:1,cmd:'luac -o hello.luac hello.lua',exp:'luac compiles Lua source to Lua bytecode. The output is a binary chunk: function prototypes, constants, upvalue descriptors, and bytecode instructions. The VM is a register-based design (unlike Python\'s stack-based VM).'},
+      {step:2,cmd:'luajit hello.lua',exp:'LuaJIT uses a trace-based JIT compiler. The interpreter records hot loops as traces, optimizes them, and compiles to native code. LuaJIT is often faster than Python by 10-50x and rivals C for some workloads.'},
+    ],
+    disassembly:
+`Lua 5.4 bytecode (register-based VM):
+  VARARG  0  1     ; load ... into reg 0
+  GETTABUP 1 0 -1  ; load global 'print' into reg 1
+  LOADK  2 -2      ; load "Hello, World!" into reg 2
+  CALL   1 2 1     ; call reg1(reg2), 0 results
+  RETURN 0 1       ; return`,
+    hex_view:
+`Lua value representation (TValue, 16 bytes):
+  value_: union { GCObject*, double, int, bool, void* }
+  tt_:    int (type tag: LUA_TNIL, LUA_TBOOLEAN, LUA_TNUMBER...)
+Strings are interned (hashed): identical strings share one GCObject.
+Numbers: Lua 5.3+ uses 64-bit integers or doubles (dual representation).`,
+    bits_explanation:
+`① print("text") = GETTABUP (load global) + CALL bytecode ops.
+② Lua GC: incremental tri-color mark-and-sweep.
+   Adjustable via collectgarbage() — useful in games.
+③ LuaJIT traces: the interpreter monitors hot backward jumps
+   (loop headers). After a threshold, the trace is JIT-compiled
+   to native code with type specialization.
+④ Tables as everything: arrays, objects, namespaces, modules
+   are all the same table type — a hash map with an array part.`,
+    deep_dive:
+`Lua is designed to be embedded. It is the scripting language of choice for games (Roblox, LÖVE, World of Warcraft), embedded devices, and config systems (Neovim, Nginx).
+
+TABLES:
+Lua has one data structure: the table. It serves as arrays (integer keys), dictionaries (any key), objects (methods via metatables), and namespaces. Arrays are optimized with a separate contiguous array part for integer keys 1..n.
+
+METATABLES:
+Every table and userdata can have a metatable — a table of metamethods (__index, __newindex, __add, __tostring, etc.). This is how OOP is implemented: __index chains allow prototype-based inheritance.
+
+COROUTINES:
+Lua has first-class coroutines (cooperative multitasking). coroutine.create, coroutine.resume, coroutine.yield. The entire coroutine state is a separate Lua thread (L_State) — cheap to create. Used for async I/O patterns in OpenResty/Nginx.
+
+EMBEDDING:
+The Lua C API is clean and minimal: lua_State* L = luaL_newstate(). Push values, call functions, get results — all via the C stack API. The entire runtime is ~280 KB. Perfect for embedding in C/C++/Rust applications.`
+  },
+
+  perl: {
+    name:'Perl', file:'hello.pl', ver:'5.x', color:'#39457E',
+    cat:['scripting'],
+    run:'interpreter:perl',
+    source:
+`#!/usr/bin/env perl
+# hello.pl — Perl 5
+# perl hello.pl
+use strict;    # require variable declarations
+use warnings;  # enable runtime warnings
+
+# print outputs to STDOUT (default filehandle).
+# Perl uses sigils: $scalar, @array, %hash.
+# The ";" is required — Perl statement terminator.
+print "Hello, World!\\n";`,
+    compile_steps:[
+      {step:1,cmd:'perl -MO=Bytecode hello.pl',exp:'Perl compiles to an internal op-tree (not bytecode in the traditional sense) on every run. The compiler parses, builds an abstract syntax tree, optimizes it, and the runtime walks the op-tree. Unlike Python/Lua, Perl does not cache compiled form to disk by default.'},
+      {step:2,cmd:'perl -MO=Concise hello.pl',exp:'-MO=Concise dumps the internal op-tree. Each op is a C struct with a pointer to the next op (linked list). The runtime executor follows op->op_next pointers, calling each op\'s pp_* function (pp_print, pp_const, etc.).'},
+    ],
+    disassembly:
+`Perl op-tree (B::Concise output):
+  nextstate       ; update PL_curcop (line tracking)
+  pushmark        ; mark stack for list context
+  const "Hello, World!\\n"
+  print           ; pp_print: write to current filehandle
+  leavesub        ; return from main program`,
+    hex_view:
+`Perl SV (Scalar Value) struct layout:
+  sv_any:  ptr → body (type-specific data)
+  sv_refcnt: U32 (reference count)
+  sv_flags: U32 (type, magic, RO flags)
+String SV: PV pointer + cur length + allocated length
+Perl uses copy-on-write for strings since 5.20`,
+    bits_explanation:
+`① Perl is dynamically typed at the SV level.
+   Context matters: "2" + 2 = 4 (numeric), "2" . 2 = "22" (string).
+② print → pp_print C function → PerlIO layer → write() syscall.
+   PerlIO is an abstraction over stdio with layered transforms.
+③ Regular expressions compile to a bytecode VM (re engine).
+   Perl\'s regex engine is the origin of PCRE.
+④ Reference counting + cycle collector for circular refs.`,
+    deep_dive:
+`Perl was the dominant web scripting language before PHP/Python. Its regex engine is the origin of PCRE used in nearly every language.
+
+CONTEXT:
+Perl's most unique feature: every expression has a context (scalar or list). @array in scalar context = length. Functions return different values depending on caller's context. wantarray() detects context.
+
+REGULAR EXPRESSIONS:
+Perl invented the regex syntax used by nearly every other language. Named captures, lookaheads, backreferences, modifiers, embedded code (?{...}), possessive quantifiers — all originate in Perl. PCRE (Perl Compatible Regular Expressions) is Perl's regex engine extracted for use in C.
+
+CPAN:
+The Comprehensive Perl Archive Network has 200,000+ modules — the first major language package repository. Inspired PyPI, RubyGems, npm, and Cargo.
+
+SIGILS:
+$scalar, @array, %hash. When accessing elements: $array[0] (single element), @array[0,1] (slice). The sigil changes based on what you're getting, not what you're accessing. This is controversial but consistent.`
+  },
+
+  // ── POPULAR ─────────────────────────────────────────
+  javascript: {
+    name:'JavaScript', file:'hello.js', ver:'ES2022', color:'#f7df1e',
+    cat:['popular','scripting'],
+    run:'interpreter:node',
+    req:'Requires Node.js (nodejs on Arch)',
+    source:
+`// hello.js — JavaScript (ES2022)
+// node hello.js
+
+// console.log() writes to process.stdout.
+// Node.js uses libuv for I/O — an event loop abstraction.
+// V8 JIT-compiles hot functions to native x86-64 code.
+console.log("Hello, World!");`,
+    compile_steps:[
+      {step:1,cmd:'node --print-bytecode hello.js 2>&1 | head -40',exp:'V8 first compiles to Ignition bytecode (register-based VM). Hot functions are then compiled by TurboFan (optimizing JIT) to native code. For hello world, Ignition bytecode executes without JIT — not hot enough to warrant compilation.'},
+      {step:2,cmd:'node --trace-opt hello.js',exp:'--trace-opt shows which functions TurboFan compiled. V8 uses type feedback: it monitors argument types and generates specialized native code. Deoptimization occurs when types change — the function falls back to Ignition bytecode.'},
+    ],
+    disassembly:
+`V8 Ignition bytecode:
+  LdaConstant [0]          ; load "Hello, World!"
+  Star r0                  ; store to register 0
+  LdaGlobal "console" [1]  ; load global
+  LdaNamedProperty a0 "log"; get .log
+  Call a0, r0              ; console.log(r0)
+  LdaUndefined
+  Return`,
+    hex_view:
+`V8 hidden class (Shape/Map) for objects:
+  Every JS object has a hidden class (Map in V8) describing
+  its property layout. Adding properties transitions the Map.
+  Stable shapes → JIT can generate fast property access.
+
+V8 memory spaces:
+  New space: young generation, ~1-8 MB, Scavenge GC
+  Old space: survived 2+ GCs, Mark-Sweep-Compact
+  Code space: JIT-compiled machine code
+  Large object space: objects > 512 KB`,
+    bits_explanation:
+`① console.log → process.stdout.write → libuv uv_write → write() syscall.
+② V8 JIT pipeline: JS source → AST → Ignition bytecode
+   → (if hot) TurboFan IR → native x86-64 code.
+③ Hidden classes: V8 tracks object shapes at runtime.
+   Same-shaped objects share JIT-compiled property accessors.
+④ Event loop: Node.js uses libuv's I/O event loop.
+   Async I/O callbacks are queued in the microtask/macrotask queues.`,
+    deep_dive:
+`JavaScript was designed in 10 days by Brendan Eich in 1995. Modern V8 makes it competitive with Java for throughput on many workloads.
+
+V8 JIT:
+Ignition (bytecode interpreter) → Sparkplug (baseline JIT, fast compilation, no optimization) → Maglev (mid-tier JIT) → TurboFan (optimizing JIT). Functions are tiered up as they get hot. TurboFan uses type feedback collected during Ignition execution to generate specialized native code.
+
+EVENT LOOP:
+Node.js uses a single-threaded event loop (libuv). Async I/O is non-blocking: fs.readFile() starts a kernel async operation and returns immediately. The callback runs when the OS signals completion. worker_threads provide true parallelism for CPU-bound work.
+
+PROTOTYPES:
+JS uses prototype-based inheritance: every object has a [[Prototype]] link. Property lookup walks the prototype chain. class syntax is syntactic sugar over prototype chains. V8 optimizes prototype chains with hidden classes — if the chain is stable, property access compiles to a single memory load.
+
+EVENT LOOP PHASES:
+timers → pending callbacks → idle/prepare → poll (I/O) → check (setImmediate) → close callbacks. Microtasks (Promise.then, queueMicrotask) run between each phase, draining the entire queue before moving on.`
+  },
+
+  typescript: {
+    name:'TypeScript', file:'hello.ts', ver:'5.x', color:'#3178c6',
+    cat:['popular'],
+    run:'interpreter:ts-node',
+    req:'Requires: npm i -g ts-node typescript',
+    source:
+`// hello.ts — TypeScript 5.x
+// ts-node hello.ts  (or tsc && node hello.js)
+
+// TypeScript adds static types to JavaScript.
+// Types are erased at compile time — zero runtime overhead.
+// The emitted JS is identical to what you'd write in plain JS.
+const message: string = "Hello, World!";
+console.log(message);`,
+    compile_steps:[
+      {step:1,cmd:'tsc hello.ts --target ES2022 --strict',exp:'TypeScript compiler performs type checking, then erases all type annotations and emits plain JavaScript. --strict enables all strict checks: noImplicitAny, strictNullChecks, strictFunctionTypes, etc. Zero type information in the output .js.'},
+      {step:2,cmd:'node hello.js',exp:'The emitted JavaScript is identical to: const message = "Hello, World!"; console.log(message); TypeScript types are purely a compile-time construct. Runtime behavior is identical to JavaScript.'},
+    ],
+    disassembly:
+`TypeScript emits this JavaScript (types erased):
+  const message = "Hello, World!";
+  console.log(message);
+
+V8 compiles this identically to plain JS.
+Type information is ZERO-COST at runtime —
+it exists only in .ts files and .d.ts declaration files.`,
+    hex_view:
+`TypeScript type system features:
+  Structural typing (duck typing with static checks)
+  Union types: string | number | null
+  Intersection: TypeA & TypeB
+  Generics: Array<T>, Promise<T>
+  Template literal types: \`Hello \${string}\`
+  Conditional types: T extends U ? X : Y
+  Mapped types: { [K in keyof T]: T[K] }
+
+All resolved at compile time. Zero runtime representation.`,
+    bits_explanation:
+`① TypeScript is a compile-time type layer over JavaScript.
+   tsc strips all annotations → emits plain JS.
+② No runtime type checks unless you add them explicitly (zod, io-ts).
+③ The V8 engine never sees TypeScript — only the emitted JS.
+④ Declaration files (.d.ts) describe types for JS libraries
+   without any runtime code — pure type metadata.`,
+    deep_dive:
+`TypeScript adds a structural type system to JavaScript, catching entire classes of bugs at compile time with zero runtime overhead.
+
+STRUCTURAL TYPING:
+TypeScript uses structural (duck) typing, not nominal typing. If two types have the same shape, they're compatible — you don't need to explicitly declare implements. This fits JavaScript's existing ecosystem perfectly.
+
+TYPE INFERENCE:
+TypeScript infers types aggressively. const x = 42 infers x: number. const fn = (x: number) => x * 2 infers the return type as number. You rarely need to write type annotations for local variables.
+
+STRICT MODE:
+--strict enables strictNullChecks (null and undefined are not assignable to other types unless explicitly included in a union), noImplicitAny (all variables must have inferable or explicit types), and several other checks that catch real bugs.
+
+ZERO RUNTIME COST:
+All TypeScript types are erased to plain JavaScript. Interfaces, type aliases, generics, conditional types — none of them produce any runtime code. This is different from languages like Java/C# where generics have runtime reification.`
+  },
+
+  java: {
+    name:'Java', file:'hello.java', ver:'21 LTS', color:'#f89820',
+    cat:['popular'],
+    run:null,
+    req:'Requires: JDK 21+ (jdk21-openjdk on Arch). Run: javac hello.java && java Hello',
+    source:
+`// hello.java — Java 21 LTS
+// javac hello.java && java Hello
+public class Hello {
+    public static void main(String[] args) {
+        // System.out is a PrintStream connected to stdout.
+        // println() calls print(str) then println() (newline).
+        // JIT: JVM compiles hot bytecode to native x86-64.
+        System.out.println("Hello, World!");
+    }
+}`,
+    compile_steps:[
+      {step:1,cmd:'javac hello.java',exp:'javac compiles Java source to JVM bytecode (.class file). The bytecode is platform-independent — runs on any JVM. Bytecode is typed and verified before execution for safety.'},
+      {step:2,cmd:'java Hello',exp:'JVM loads Hello.class, verifies bytecode, starts the JIT (C1 + C2 compilers). Hot methods are compiled to native code. JVM startup overhead is significant for short programs but amortized in long-running server applications.'},
+      {step:3,cmd:'java -native-image Hello (GraalVM)',exp:'GraalVM Native Image ahead-of-time compiles Java to a standalone native binary. No JVM startup. Startup time drops from ~100ms to ~1ms. Used in Quarkus/Micronaut for cloud-native Java.'},
+    ],
+    disassembly:
+`JVM bytecode (javap -c Hello.class):
+  public static void main(java.lang.String[]):
+    0: getstatic #7 (System.out: PrintStream)
+    3: ldc #13 ("Hello, World!")
+    5: invokevirtual #15 (PrintStream.println)
+    8: return
+
+JIT-compiled native (C2 output):
+  mov  rdi, [System.out ptr]
+  lea  rsi, [string_constant]
+  call PrintStream.println (JIT-compiled method)`,
+    hex_view:
+`JVM Class file format:
+  CAFEBABE         ← magic number (Java's founder loved coffee)
+  00 00 00 41      ← major version 65 = Java 21
+  constant pool: strings, class refs, method refs
+  access flags, this class, super class
+  fields, methods (with Code attribute = bytecode)
+  attributes (SourceFile, LineNumberTable, etc.)`,
+    bits_explanation:
+`① Java bytecode is typed: iload (int), aload (ref), dload (double).
+   The verifier checks types before JIT compilation.
+② JVM JIT: C1 (fast, less optimized) → C2 (slow, heavily optimized).
+   Methods tiered up based on invocation count.
+③ Object layout: 12-byte header (mark word + class pointer).
+   All objects heap-allocated. No stack objects in Java.
+④ GC: G1GC (default), ZGC (sub-ms pauses), Shenandoah.
+   All involve write barriers on pointer stores.`,
+    deep_dive:
+`Java introduced "write once, run anywhere" via the JVM bytecode abstraction. JVM JIT makes long-running Java competitive with C for throughput.
+
+JVM ARCHITECTURE:
+Class loader → bytecode verifier → interpreter → C1 JIT → C2 JIT. The tiered compilation system warms up quickly (C1) then optimizes hot paths (C2). C2 uses speculative optimization with deoptimization fallbacks.
+
+GARBAGE COLLECTION:
+G1GC divides the heap into regions, mixing young and old generation collection. ZGC (Java 15+) achieves sub-millisecond pause times by doing most work concurrently with the application. The GC chooses pause times over throughput.
+
+VIRTUAL THREADS (Java 21):
+Project Loom adds virtual threads — JVM-managed lightweight threads like Go goroutines. Millions of virtual threads on a few OS threads. Blocking operations automatically park the virtual thread and release the OS thread.
+
+GRAALVM:
+GraalVM Native Image AOT-compiles Java to a standalone executable. No JVM startup overhead. But: no runtime class loading, no JIT reoptimization, no reflection without configuration. Used in Quarkus and Micronaut for cloud functions.`
+  },
+
+  kotlin: {
+    name:'Kotlin', file:'hello.kt', ver:'2.x', color:'#7f52ff',
+    cat:['popular'],
+    run:null,
+    req:'Requires: Kotlin compiler (kotlin on Arch). Run: kotlinc hello.kt -include-runtime -d hello.jar && java -jar hello.jar',
+    source:
+`// hello.kt — Kotlin 2.x
+// kotlinc hello.kt -include-runtime -d hello.jar
+// java -jar hello.jar
+fun main() {
+    // println is a Kotlin stdlib function wrapping System.out.
+    // Kotlin compiles to JVM bytecode, JavaScript, or native (K/N).
+    // Null safety: String is non-nullable. String? is nullable.
+    println("Hello, World!")
+}`,
+    compile_steps:[
+      {step:1,cmd:'kotlinc hello.kt -include-runtime -d hello.jar',exp:'kotlinc compiles Kotlin to JVM bytecode (.class files), packaged into a JAR. -include-runtime bundles the Kotlin stdlib. The Kotlin compiler runs type inference, null safety analysis, and coroutine transformation before emitting bytecode.'},
+      {step:2,cmd:'kotlinc hello.kt -include-runtime -d hello.jar && java -jar hello.jar',exp:'The resulting JAR runs on any JVM. Kotlin/Native (K/N) can compile directly to native binaries using LLVM, bypassing the JVM entirely. Kotlin Multiplatform compiles the same code to JVM, JS, and native targets.'},
+    ],
+    disassembly:
+`Kotlin bytecode (kotlinc then javap -c):
+  Same JVM bytecode as Java.
+  fun main() compiles to:
+    invokestatic kotlin.io.ConsoleKt.println
+    which calls System.out.println internally.
+
+Kotlin features compile away:
+  data class → equals/hashCode/toString generated
+  sealed class → checked exhaustive when
+  suspend fun → state machine (CPS transformation)`,
+    hex_view:
+`Kotlin's key compile-time transformations:
+  Null safety: compiler tracks nullability in types.
+  Non-null dereference compiles without null checks.
+  Elvis operator ?: compiles to a conditional branch.
+
+  Coroutines (suspend fun): transformed to state machine.
+  Each suspension point = a state in a when-expression.
+  No runtime coroutine type — pure CPS transformation.`,
+    bits_explanation:
+`① Null safety enforced at compile time — no NullPointerException
+   from Kotlin code (interop with Java can still produce them).
+② Data classes: compiler generates equals/hashCode/toString/copy
+   from the primary constructor parameters.
+③ Coroutines compile to state machines via CPS transformation.
+   suspend = checkpointed function, not a thread.
+④ Smart casts: after null check or is-check, the compiler
+   narrows the type automatically — no explicit cast needed.`,
+    deep_dive:
+`Kotlin is a pragmatic JVM language designed to be 100% interoperable with Java while fixing its pain points.
+
+NULL SAFETY:
+Every type is non-nullable by default. String is guaranteed non-null. String? can be null. The compiler enforces null handling at every call site. This eliminates NullPointerException from Kotlin code entirely (Java interop is the remaining source).
+
+COROUTINES:
+Kotlin coroutines are compile-time transformations, not runtime threads. suspend functions are transformed to state machines using continuation passing style (CPS). The coroutine framework (kotlinx.coroutines) provides dispatchers that run coroutines on thread pools. Millions of coroutines on tens of threads.
+
+DATA CLASSES:
+data class Person(val name: String, val age: Int) automatically generates equals, hashCode, toString, copy, and componentN functions. Structural equality by default — no more forgetting to implement equals.
+
+KOTLIN MULTIPLATFORM:
+The same Kotlin code can target JVM, JavaScript, iOS (via Kotlin/Native → LLVM), Android, and WASM. The expect/actual mechanism allows platform-specific implementations with a common interface.`
+  },
+
+  csharp: {
+    name:'C#', file:'hello.cs', ver:'.NET 8', color:'#512bd4',
+    cat:['popular'],
+    run:null,
+    req:'Requires: .NET 8 SDK (dotnet-sdk on Arch). Run: dotnet run',
+    source:
+`// hello.cs — C# (.NET 8)
+// dotnet run  (or: csc hello.cs && mono hello.exe)
+
+// Top-level statements (C# 9+) — no class/Main required
+// Console.WriteLine writes to stdout via TextWriter.
+// .NET uses the CLR (Common Language Runtime) — JIT like JVM.
+Console.WriteLine("Hello, World!");`,
+    compile_steps:[
+      {step:1,cmd:'dotnet build',exp:'Roslyn (C# compiler) compiles to CIL (Common Intermediate Language) bytecode in a .dll assembly. CIL is similar to JVM bytecode but has value types (structs) that don\'t require heap allocation. The assembly includes type metadata for reflection.'},
+      {step:2,cmd:'dotnet run',exp:'CLR loads the assembly, JIT compiles hot CIL to native code (RyuJIT). .NET has AOT options: NativeAOT compiles the entire app to a self-contained native binary, similar to GraalVM Native Image.'},
+    ],
+    disassembly:
+`CIL bytecode (ildasm output):
+  ldstr "Hello, World!"
+  call void [System.Console]System.Console::WriteLine(string)
+  ret
+
+RyuJIT native output (optimized):
+  lea  rdi, [string_handle]
+  call System.Console.WriteLine
+  ret
+  ; RyuJIT inlines and vectorizes aggressively`,
+    hex_view:
+`.NET Assembly (PE32+ format):
+  DOS/PE header → CLR header
+  CIL bytecode in .text section
+  Metadata tables: TypeDef, MethodDef, MemberRef
+  String heap, GUID heap, Blob heap
+  Strong name signature (optional)`,
+    bits_explanation:
+`① Value types (struct) are stack-allocated — no GC pressure.
+   Reference types (class) are heap-allocated — GC managed.
+② Span<T> and Memory<T>: slices over arrays/memory,
+   zero-allocation views — used extensively for performance.
+③ async/await compiles to state machines like Kotlin coroutines.
+   IAsyncStateMachine interface, continuation callbacks.
+④ RyuJIT: SIMD auto-vectorization, JIT intrinsics for
+   hardware-specific instructions (AVX2, AES-NI).`,
+    deep_dive:
+`C# evolved from a Java alternative into one of the most feature-rich compiled languages. .NET 8 has performance that rivals C++ in benchmarks.
+
+VALUE TYPES:
+C# structs are value types — stored on the stack, copied on assignment, no GC overhead. Record structs (C# 10) give value semantics with auto-generated equality and deconstruct. Span<T> is a ref struct — lives only on the stack, cannot escape to the heap.
+
+ASYNC/AWAIT:
+C# async/await was the first major language to introduce this pattern (2012). Async methods compile to state machines. The runtime handles scheduling continuation callbacks. ValueTask<T> avoids allocations for methods that often complete synchronously.
+
+PERFORMANCE IN .NET 8:
+.NET 8 introduced Frozen collections (immutable, lookup-optimized), ahead-of-time native AOT, tiered compilation with PGO (profile-guided optimization). TechEmpower benchmarks show .NET 8 competitive with Go and near C++ for HTTP throughput.
+
+LINQ:
+Language Integrated Query — query databases, collections, XML, and any IEnumerable<T> source using SQL-like syntax directly in C#. query expressions compile to method chains (Select, Where, OrderBy) which compile to delegate calls.`
+  },
+
+  swift: {
+    name:'Swift', file:'hello.swift', ver:'5.9+', color:'#f05138',
+    cat:['popular'],
+    run:null,
+    req:'Requires: Swift compiler (swift on Arch/AUR). Run: swift hello.swift',
+    source:
+`// hello.swift — Swift 5.9+
+// swift hello.swift
+// or: swiftc hello.swift -o hello && ./hello
+
+// print() writes to stdout via Swift's standard library.
+// Swift uses ARC (Automatic Reference Counting) — no GC.
+// The compiler inserts retain/release calls at compile time.
+print("Hello, World!")`,
+    compile_steps:[
+      {step:1,cmd:'swiftc hello.swift -o hello',exp:'swiftc compiles via LLVM: Swift AST → SIL (Swift Intermediate Language) → LLVM IR → native code. SIL is unique to Swift — it represents ownership semantics explicitly before LLVM optimization, enabling ARC optimization and mandatory diagnostics.'},
+      {step:2,cmd:'swiftc -O hello.swift -o hello',exp:'-O optimization enables whole-module optimization. The SIL optimizer eliminates ARC retain/release pairs when the compiler can prove the object stays alive (static ownership analysis). In practice, most retain/release pairs are eliminated in optimized builds.'},
+    ],
+    disassembly:
+`<main>:
+  ; print("Hello, World!") expands to:
+  ; Swift.print<A>(_:separator:terminator:) generic function
+  lea  rdi, [string_descriptor]
+  lea  rsi, [string_data]
+  mov  edx, 14                ; length
+  call Swift.print             ; stdlib function
+  ; No retain/release for a string literal — statically known lifetime`,
+    hex_view:
+`Swift String representation:
+  Small strings (≤15 UTF-8 bytes): stored inline in 2 words.
+  Large strings: pointer to heap buffer + length + capacity.
+  String.Index: not an integer — unicode-aware cursor.
+  String literals are UTF-8 encoded in .rodata.
+
+ARC overhead:
+  Every class instance has a reference count header (strong + weak).
+  retain = atomic increment, release = atomic decrement + conditional free.`,
+    bits_explanation:
+`① ARC: compiler inserts retain() before stores, release() after last use.
+   Optimizer eliminates pairs provably within one scope.
+② SIL enforces ownership: +1 means owned reference, @guaranteed means borrowed.
+   This is similar to Rust's borrow checker but runtime-enforced via ARC.
+③ print() in stdlib: calls _swift_stdlib_print → write() syscall.
+④ Swift concurrency (async/await + actors) uses cooperative threading
+   via the Swift Concurrency runtime — similar to Kotlin coroutines.`,
+    deep_dive:
+`Swift is designed to replace Objective-C for Apple platform development, with C-level performance and a focus on safety and expressiveness.
+
+ARC vs GC:
+Automatic Reference Counting inserts retain/release calls at compile time. No GC pauses — memory is freed deterministically when reference count hits zero. Cost: atomic operations on every reference store/release. The SIL optimizer eliminates many of these.
+
+OPTIONALS:
+Every Swift type is non-optional by default. Optional<T> (written T?) is an enum: case .some(T) or case .none. The compiler enforces unwrapping. optional chaining (a?.b?.c), nil-coalescing (a ?? default), and if let binding are all compile-time constructs.
+
+VALUE SEMANTICS:
+Swift structs, enums, and tuples have value semantics — copy-on-write for collections (Array, Dictionary, String). Mutations are visible only to the owner. This enables safe concurrent access without locks for value types.
+
+SWIFT CONCURRENCY:
+async/await + actors (Swift 5.5). Actors are reference types with isolated state — only one task accesses actor state at a time. The Swift Concurrency runtime uses a cooperative thread pool. Structured concurrency via async let and TaskGroup.`
+  },
+
+  php: {
+    name:'PHP', file:'hello.php', ver:'8.3', color:'#777bb4',
+    cat:['popular','scripting'],
+    run:'interpreter:php',
+    source:
+`<?php
+// hello.php — PHP 8.3
+// php hello.php
+
+// echo outputs directly to stdout (or HTTP response in web context).
+// PHP 8+ JIT (OpCache JIT) compiles hot opcodes to native x86-64.
+// PHP was designed for web: each request gets a fresh process/thread.
+echo "Hello, World!\\n";`,
+    compile_steps:[
+      {step:1,cmd:'php -d opcache.enable_cli=1 hello.php',exp:'PHP compiles source to Zend opcodes on every run (cached by OPcache in web servers). OPcache stores compiled opcodes in shared memory, skipping the compilation step on subsequent requests.'},
+      {step:2,cmd:'php --re opcache  (check JIT support)',exp:'PHP 8.0+ includes the JIT compiler in OPcache. Two modes: tracing JIT (traces hot code paths like LuaJIT) and function JIT (compiles entire functions). For web requests, the startup overhead often outweighs JIT benefit.'},
+    ],
+    disassembly:
+`PHP opcode dump (php -d opcache.opt_debug_level=0x20000 hello.php):
+  ECHO "Hello, World!\\n"
+  RETURN null
+
+Zend VM executes opcodes in a dispatch loop:
+  while(1) { handler = handlers[opcode]; handler(execute_data); }
+  ECHO handler → ZEND_ECHO_SPEC_CONST_HANDLER → zend_write()`,
+    hex_view:
+`PHP zval (variable) structure:
+  value:  union { long, double, ptr, ... }  (8 bytes)
+  u1:     type info (IS_STRING, IS_LONG, IS_NULL...)
+  u2:     extra flags
+Total: 16 bytes per variable
+Copy-on-write: multiple variables can share one zval until mutation.`,
+    bits_explanation:
+`① echo → ZEND_ECHO opcode → zend_write() → write() or SAPI output.
+   In CLI mode: write() syscall. In FPM: buffered HTTP response.
+② OPcache: stores compiled opcodes in SHM (shared memory).
+   All worker processes share the same opcode cache — no recompilation.
+③ PHP\'s "nothing shared between requests" model:
+   Each request gets a clean heap. No cross-request state.
+   Simple but wastes startup time on every request.
+④ PHP 8 JIT uses libjit or LLVM backend.
+   Most effective for CPU-heavy workloads like image processing.`,
+    deep_dive:
+`PHP powers ~77% of websites with server-side scripting. PHP 8.0+ modernized the language significantly with the JIT, match expressions, and union types.
+
+SHARE-NOTHING ARCHITECTURE:
+By default, each PHP request starts fresh — no shared state between requests. This makes horizontal scaling trivial but wastes time on every request re-initializing global state. OPcache, preloading (PHP 7.4+), and FrankenPHP (persistent PHP) address this.
+
+PHP 8 TYPE SYSTEM:
+Union types: int|string. Named arguments. Match expressions (like switch but an expression). Nullsafe operator (?->). Readonly properties. Enums (PHP 8.1). Fibers (PHP 8.1) — cooperative coroutines similar to Lua coroutines.
+
+PERFORMANCE:
+PHP 5 to PHP 8: roughly 4x throughput improvement. FPM (FastCGI Process Manager) pre-forks worker processes. OPcache eliminates recompilation. JIT helps CPU-bound code. For I/O-bound workloads (typical web), async PHP (ReactPHP, Swoole, RoadRunner) avoids blocking.
+
+SAPI (Server API):
+PHP abstracts output through SAPI. echo in CLI goes to stdout via write(). echo in FPM goes to a response buffer. echo in mod_php goes to Apache's response. The same PHP code runs in all contexts.`
+  },
+
+  bash: {
+    name:'Bash', file:'hello.sh', ver:'5.x', color:'#4eaa25',
+    cat:['scripting','popular'],
+    run:'interpreter:bash',
+    source:
+`#!/usr/bin/env bash
+# hello.sh — Bash 5.x
+# bash hello.sh
+
+# echo is a shell builtin — no fork/exec for the command itself.
+# The shell parses this script, expands variables, and executes builtins.
+# Bash scripts are interpreted line by line (no bytecode compilation).
+echo "Hello, World!"`,
+    compile_steps:[
+      {step:1,cmd:'bash -x hello.sh',exp:'-x traces every command before execution. Shows variable expansions, command substitutions, and which builtins vs external commands are used. Bash reads and parses the script line-by-line (technically it reads ahead to handle multiline constructs).'},
+      {step:2,cmd:'bash -n hello.sh',exp:'-n parse-checks without executing. Finds syntax errors. Bash has no compilation step — it parses and executes in one pass. Unlike Python/Lua, there is no intermediate bytecode representation.'},
+    ],
+    disassembly:
+`Bash executes echo as a builtin (no fork/exec):
+  strace bash hello.sh | grep write:
+  write(1, "Hello, World!\\n", 14) = 14
+
+strace shows the exact syscall. For external commands
+(not builtins), Bash does: fork() → execve() → the program runs.
+echo is a builtin → direct write() without fork.`,
+    hex_view:
+`Bash has no binary format — it's interpreted text.
+The kernel executes bash itself, which reads the script.
+
+How #!/usr/bin/env bash works:
+  The kernel sees the shebang line (#!).
+  It execve()s /usr/bin/env with "bash hello.sh" as args.
+  env finds bash in $PATH and execve()s it.
+  Total: 2 execve() calls before your script runs.`,
+    bits_explanation:
+`① Shebang (#!) is handled by the kernel's binfmt_script handler.
+   The kernel reads the first line, extracts the interpreter path,
+   and execve()s it with the script as an argument.
+② echo is a bash builtin — implemented in C inside the bash binary.
+   Calls write(1, "Hello, World!\\n", 14) directly.
+③ External commands: fork() creates a child process,
+   execve() replaces it with the command binary.
+   The parent wait()s for the child to exit.
+④ Pipelines: | creates a pipe (2 fds), two forks, two execve()s.`,
+    deep_dive:
+`Bash (Bourne Again SHell) is the standard Unix shell and scripting language. Understanding Bash means understanding Unix process model.
+
+FORK/EXEC MODEL:
+Every external command in a script does: fork() (clone the process) → execve() (replace it with the command). The parent shell waits for the child. Builtins (echo, cd, read) skip fork — they run as C code inside bash itself. This is why cd can only be a builtin: a child process cannot change its parent's working directory.
+
+PIPELINES:
+a | b creates an anonymous pipe (2 file descriptors), forks twice, connects a's stdout to the pipe write end and b's stdin to the read end. Both run concurrently. The shell waits for both to exit.
+
+VARIABLE EXPANSION:
+$var expands inline. "$var" expands as a single word. $var without quotes splits on IFS and glob-expands. This is the source of most shell injection bugs — always quote your variables.
+
+PROCESS SUBSTITUTION:
+<(command) creates a FIFO, runs command with its output going to the FIFO, and substitutes the FIFO path. diff <(sort a.txt) <(sort b.txt) compares sorted versions without temp files. Implemented with fork, pipe, and /dev/fd/.`
+  },
+
+  r: {
+    name:'R', file:'hello.r', ver:'4.x', color:'#276dc3',
+    cat:['scripting','popular'],
+    run:'interpreter:Rscript',
+    source:
+`# hello.r — R 4.x
+# Rscript hello.r
+
+# cat() concatenates and writes to stdout (no trailing newline by default).
+# print() adds formatting (quotes around strings, [1] prefix for vectors).
+# R is a statistical computing language — everything is a vector.
+cat("Hello, World!\\n")`,
+    compile_steps:[
+      {step:1,cmd:'Rscript hello.r',exp:'R parses source to an AST, translates to bytecode (since R 2.13), and executes via the R bytecode evaluator. The bytecode compiler (compiler package) is enabled by default. R code rarely compiles to native — performance-critical code uses Rcpp (C++ integration).'},
+      {step:2,cmd:'R -e "compiler::cmpfun(function() cat(\'Hello\\n\'))"',exp:'compiler::cmpfun compiles an R function to bytecode explicitly. The .Internal bytecode evaluator is faster than the AST interpreter. For heavy numerical work, Rcpp writes C++ that integrates seamlessly with R\'s data structures.'},
+    ],
+    disassembly:
+`R bytecode (compiler::disassemble):
+  LDCONST "Hello, World!\\n"
+  CALLBUILTIN cat
+  INVISIBLE
+  RETURN
+
+R evaluator path:
+  Rscript → R_Parse → eval() → bcEval() (bytecode evaluator)
+  → cat() builtin → do_cat() C function → Rconn_printf → write()`,
+    hex_view:
+`R SEXP (S-expression) structure:
+  Every R value is an SEXP pointer to:
+    sxpinfo: type(5 bits), gc bits, flags
+    attrib:  SEXP (named attributes, class, dim)
+    gengc_*: GC generation pointers
+    data:    type-specific payload
+
+Character vector SEXP: STRSXP → array of CHARSXP.
+"Hello, World!" is stored as a CHARSXP in a global cache.`,
+    bits_explanation:
+`① In R, "Hello, World!" is a character vector of length 1.
+   Everything is a vector — there are no scalars.
+   42 is numeric(1): a vector of length 1.
+② cat() converts the vector to string, writes to connection (stdout).
+   Connection = abstraction over files, stdin, stdout, URLs, pipes.
+③ R GC: generational mark-and-sweep triggered by allocation counts.
+   Large objects bypass the nursery.
+④ R\'s BLAS/LAPACK integration: matrix operations call optimized
+   BLAS routines (OpenBLAS, MKL) directly — C-speed numerics.`,
+    deep_dive:
+`R is designed for statistical computing and data analysis. Its vectorized operations and statistical libraries are unmatched.
+
+EVERYTHING IS A VECTOR:
+There are no scalars in R. 42 is a numeric vector of length 1. "text" is a character vector of length 1. Vectorized operations apply over entire vectors without explicit loops: x^2 squares every element. This is both elegant and efficient (underlying C loops).
+
+COPY-ON-MODIFY:
+R uses copy-on-modify semantics (lazy copy). y <- x doesn't copy immediately — both names point to the same data. Modifying y triggers a copy. This is efficient for read-heavy workflows but can surprise with unexpected copies in mutating code.
+
+DATA FRAME:
+The data.frame is R's central structure — a list of equal-length vectors with named columns. Each column can have a different type. This is the inspiration for pandas DataFrame in Python. Manipulated with base R, dplyr (tidyverse), or data.table.
+
+RCPP:
+Rcpp seamlessly integrates C++ with R. Write performance-critical functions in C++, compile with Rcpp::sourceCpp(), call from R. The Rcpp API provides wrappers for all R data types. This is how heavy-duty R packages (e.g., Stan, xgboost) achieve C-speed.`
+  },
+};
+
+// ═══════════════════════════════════════════════════
+// UI Bootstrap
+// ═══════════════════════════════════════════════════
+function getInvoke() {
+  return window.__TAURI__?.core?.invoke ?? window.__TAURI__?.invoke ?? null;
+}
+
+let currentLang = null;
+let currentCat  = 'all';
+
+const catBar      = document.getElementById('catBar');
+const langBar     = document.getElementById('langBar');
+const splash      = document.getElementById('splash');
+const contentArea = document.getElementById('contentArea');
+const statusDot   = document.getElementById('statusDot');
+const statusText  = document.getElementById('statusText');
+const runBtn      = document.getElementById('runBtn');
+const infoBtn     = document.getElementById('infoBtn');
+const modalOverlay= document.getElementById('modalOverlay');
+const modalClose  = document.getElementById('modalClose');
+
+// Update splash count
+document.getElementById('splashCount').textContent =
+  Object.keys(LANGS).length + ' LANGUAGES · SOURCE · DISASSEMBLY · HEX · DEEP DIVE';
+
+// Build category buttons
+CATEGORIES.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.className = 'cat-btn' + (cat.id === 'all' ? ' active' : '');
+  btn.textContent = cat.label;
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCat = cat.id;
+    buildLangBar();
+  });
+  catBar.appendChild(btn);
+});
+
+// Build language buttons for current category
+function buildLangBar() {
+  langBar.innerHTML = '';
+  Object.entries(LANGS).forEach(([id, lang]) => {
+    if (currentCat !== 'all' && !lang.cat.includes(currentCat)) return;
+    const btn = document.createElement('button');
+    btn.className = 'lang-btn' + (id === currentLang ? ' active' : '');
+    btn.dataset.lang = id;
+    btn.innerHTML =
+      '<span class="lang-dot" style="background:' + lang.color + '"></span>' +
+      '<span class="lang-name">' + lang.name + '</span>' +
+      '<span class="lang-ver">' + lang.ver + '</span>';
+    btn.addEventListener('click', () => selectLanguage(id));
+    langBar.appendChild(btn);
+  });
+}
+buildLangBar();
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const t = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + t).classList.add('active');
+  });
+});
+
+runBtn.addEventListener('click', runProgram);
+infoBtn.addEventListener('click', () => { modalOverlay.classList.add('open'); });
+modalClose.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'r' && !e.ctrlKey && !e.metaKey && currentLang && !runBtn.disabled && document.activeElement.tagName !== 'INPUT') runProgram();
+});
+
+function closeModal() { modalOverlay.classList.remove('open'); }
+
+function selectLanguage(id) {
+  currentLang = id;
+  const lang = LANGS[id];
+
+  // Update nav active state
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === id);
+  });
+
+  splash.style.display = 'none';
+  contentArea.style.display = 'grid';
+
+  // Reset output tab
+  document.getElementById('termResult').innerHTML = '<span class="terminal-hint">Press RUN to execute →</span>';
+  document.getElementById('termResult').className = 'terminal-result';
+  document.getElementById('outputMeta').style.display = 'none';
+  document.getElementById('reqNotice').innerHTML = '';
+
+  // Reset tabs to output
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'output'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-output'));
+
+  populateUI(lang);
+
+  // Run button state
+  const inv = getInvoke();
+  const canRun = inv && lang.run !== null;
+  runBtn.disabled = !canRun;
+  const reqEl = document.getElementById('runReq');
+  if (!inv) {
+    reqEl.textContent = 'Run available in compiled app';
+  } else if (lang.run === null) {
+    reqEl.textContent = '';
+    // Show requirement notice in output tab
+    if (lang.req) {
+      document.getElementById('reqNotice').innerHTML =
+        '<div class="req-notice"><strong>⚠ Cannot run directly</strong><br>' +
+        esc(lang.req) + '</div>';
+    }
+  } else {
+    reqEl.textContent = '';
+  }
+
+  setStatus('ready', lang.name.toUpperCase() + ' READY');
+}
+
+function populateUI(lang) {
+  document.getElementById('langNameDisplay').textContent = lang.name.toUpperCase();
+  document.getElementById('sourceFilename').textContent = lang.file;
+  const cmd = lang.run === null ? 'see compile steps →'
+    : lang.run === 'binary' ? './' + (currentLang === 'asm' ? 'hello_asm' : 'hello_' + currentLang)
+    : lang.run.replace('interpreter:', '') + ' ' + lang.file;
+  document.getElementById('termCmd').textContent = cmd;
+  document.getElementById('sourceCode').textContent = lang.source;
+
+  // Compile steps
+  const stepsEl = document.getElementById('compileSteps');
+  stepsEl.innerHTML = '';
+  (lang.compile_steps || []).forEach(step => {
+    const el = document.createElement('div');
+    el.className = 'compile-step';
+    el.innerHTML =
+      '<div class="step-header"><div class="step-num">' + step.step + '</div>' +
+      '<div class="step-cmd">' + esc(step.cmd) + '</div></div>' +
+      '<div class="step-exp">' + esc(step.exp) + '</div>';
+    stepsEl.appendChild(el);
+  });
+
+  document.getElementById('disasmContent').textContent = lang.disassembly || '';
+  document.getElementById('hexContent').textContent    = lang.hex_view || '';
+  document.getElementById('bitsContent').textContent   = lang.bits_explanation || '';
+  document.getElementById('deepContent').innerHTML     = formatDeep(lang.deep_dive || '');
+}
+
+async function runProgram() {
+  const inv = getInvoke();
+  if (!currentLang || !inv) return;
+  runBtn.disabled = true;
+  setStatus('running', 'RUNNING…');
+
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'output'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-output'));
+
+  const termResult = document.getElementById('termResult');
+  termResult.className = 'terminal-result';
+  termResult.innerHTML = '<span class="terminal-hint">Executing…</span>';
+
+  try {
+    const r = await inv('run_hello_world', { lang: currentLang });
+    document.getElementById('outputMeta').style.display = 'flex';
+    document.getElementById('metaExitCode').textContent = 'EXIT: ' + r.exit_code;
+    document.getElementById('metaDuration').textContent = 'TIME: ' + r.duration_ms + 'ms';
+    const ok = r.exit_code === 0;
+    if (r.stdout) { termResult.className = ok ? 'terminal-result success' : 'terminal-result'; termResult.textContent = r.stdout; }
+    if (r.stderr) { termResult.className = 'terminal-result error-out'; termResult.textContent += r.stderr; }
+    if (!r.stdout && !r.stderr) termResult.innerHTML = '<span class="terminal-hint">(no output)</span>';
+    setStatus(ok ? 'done' : 'error', ok ? 'EXECUTED OK' : 'EXIT ' + r.exit_code);
+  } catch(err) {
+    termResult.className = 'terminal-result error-out';
+    termResult.textContent = 'Error: ' + err;
+    setStatus('error', 'EXEC FAILED');
+  }
+  runBtn.disabled = false;
+}
+
+function setStatus(state, text) {
+  statusDot.className = 'status-dot' + (state==='running'?' running':state==='done'?' done':state==='error'?' error':'');
+  statusText.textContent = text;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDeep(text) {
+  const lines = text.split('\n');
+  let html='', inP=false;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { if(inP){html+='</p>';inP=false;} continue; }
+    if (/^[A-Z][A-Z0-9 _\-()+\/]+:/.test(line) && line.length < 80 && !line.includes('//')) {
+      if(inP){html+='</p>';inP=false;}
+      html += '<h3>' + esc(line) + '</h3>';
+      continue;
+    }
+    const fmt = esc(line).replace(/`([^`]+)`/g,'<code>$1</code>');
+    if(!inP){html+='<p>';inP=true;} else {html+=' ';}
+    html += fmt;
+  }
+  if(inP) html+='</p>';
+  return html;
+}
+</script>
+</body>
+</html>
