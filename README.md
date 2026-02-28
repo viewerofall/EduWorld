@@ -8,7 +8,7 @@ EduWorld is a desktop application that lets you pick any of 20+ programming lang
 
 ## Screenshots
 
-> *(add screenshots here)*
+![Image of user doing a deep dive on hello world in GO] Eduworld/1772317100642417627.png
 
 ---
 
